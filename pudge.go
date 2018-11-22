@@ -27,12 +27,13 @@ var (
 // Db represent database
 type Db struct {
 	sync.RWMutex
-	name         string
-	fk           *os.File
-	fv           *os.File
-	keys         [][]byte
-	vals         map[string]*Cmd
-	cancelSyncer context.CancelFunc
+	name          string
+	fk            *os.File
+	fv            *os.File
+	keys          [][]byte
+	vals          map[string]*Cmd
+	cancelSyncer  context.CancelFunc
+	orderedInsert bool
 }
 
 // Cmd represent keys and vals addresses
@@ -48,9 +49,10 @@ type Cmd struct {
 // Default DirMode = 0777
 // Default SyncInterval = 1 sec, 0 - disable sync (os will sync, typically 30 sec or so)
 type Config struct {
-	FileMode     int // 0666
-	DirMode      int // 0777
-	SyncInterval int // in seconds
+	FileMode      int  // 0666
+	DirMode       int  // 0777
+	SyncInterval  int  // in seconds
+	OrderedInsert bool // keep keys sorted on insert
 }
 
 func init() {
@@ -64,7 +66,7 @@ func init() {
 // Default Config (if nil): &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1}
 func Open(f string, cfg *Config) (*Db, error) {
 	if cfg == nil {
-		cfg = &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1}
+		cfg = &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1, OrderedInsert: false}
 	}
 	dbs.RLock()
 	db, ok := dbs.dbs[f]
@@ -91,6 +93,7 @@ func newDb(f string, cfg *Config) (*Db, error) {
 	defer db.Unlock()
 	// init
 	db.name = f
+	db.orderedInsert = cfg.OrderedInsert
 	db.keys = make([][]byte, 0)
 	db.vals = make(map[string]*Cmd)
 
@@ -143,7 +146,7 @@ func newDb(f string, cfg *Config) (*Db, error) {
 		case 0:
 			if _, exists := db.vals[strkey]; !exists {
 				//write new key at keys store
-				db.appendAsc(key)
+				db.appendKey(key, cfg.OrderedInsert)
 			}
 			db.vals[strkey] = cmd
 		case 1:
@@ -178,7 +181,11 @@ func (db *Db) backgroundManager(interval int) {
 }
 
 //appendAsc insert key in slice in ascending order
-func (db *Db) appendAsc(b []byte) {
+func (db *Db) appendKey(b []byte, ordered bool) {
+	if !ordered {
+		db.keys = append(db.keys, b)
+		return
+	}
 	keysLen := len(db.keys)
 	found := db.found(b)
 	if found == 0 {
@@ -209,8 +216,17 @@ func (db *Db) deleteFromKeys(b []byte) {
 	}
 }
 
+func (db *Db) sort() {
+	if !db.orderedInsert {
+		sort.Slice(db.keys, func(i, j int) bool {
+			return bytes.Compare(db.keys[i], db.keys[j]) <= 0
+		})
+	}
+}
+
 //found return binary search result
 func (db *Db) found(b []byte) int {
+	db.sort()
 	found := sort.Search(len(db.keys), func(i int) bool {
 		return bytes.Compare(db.keys[i], b) >= 0
 	})
@@ -350,7 +366,7 @@ func (db *Db) Set(key, value interface{}) error {
 	//	cmd.CounterVal = value.(int64)
 	//}
 	if !exists {
-		db.appendAsc(k)
+		db.appendKey(k, db.orderedInsert)
 	}
 
 	return err
@@ -576,6 +592,7 @@ func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, err
 // FindKey return index of last key in descending mode
 func (db *Db) FindKey(key interface{}, asc bool) (int, error) {
 	if key == nil {
+		db.sort()
 		if asc {
 			return 0, nil
 		}

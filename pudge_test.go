@@ -3,6 +3,7 @@ package pudge
 import (
 	"fmt"
 	"strconv"
+	"sync"
 	"testing"
 )
 
@@ -113,7 +114,7 @@ func TestKeys(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	for i := 1; i <= 20; i++ {
+	for i := 20; i >= 1; i-- {
 		append(i)
 	}
 
@@ -196,9 +197,75 @@ func TestCounter(t *testing.T) {
 func TestLazyOpen(t *testing.T) {
 	Set(f, 2, 42)
 	var val int
+	CloseAll()
 	Get(f, 2, &val)
 	if val != 42 {
 		t.Error("not 42")
 	}
 	DeleteFile(f)
+}
+
+func TestAsync(t *testing.T) {
+	len := 5
+	file := "test/async.db"
+	DeleteFile(file)
+	defer CloseAll()
+
+	messages := make(chan int)
+	readmessages := make(chan string)
+	var wg sync.WaitGroup
+
+	append := func(i int) {
+		defer wg.Done()
+		k := ("Key:" + strconv.Itoa(i))
+		v := ("Val:" + strconv.Itoa(i))
+		err := Set(file, []byte(k), []byte(v))
+		if err != nil {
+			t.Error(err)
+		}
+		messages <- i
+	}
+
+	read := func(i int) {
+		defer wg.Done()
+		k := ("Key:" + strconv.Itoa(i))
+		v := ("Val:" + strconv.Itoa(i))
+		var b []byte
+		Get(file, []byte(k), &b)
+
+		if string(b) != string(v) {
+			t.Error("not mutch")
+		}
+		readmessages <- fmt.Sprintf("read N:%d  content:%s", i, string(b))
+	}
+
+	for i := 1; i <= len; i++ {
+		wg.Add(1)
+		go append(i)
+
+	}
+
+	go func() {
+		for i := range messages {
+			_ = i
+			//fmt.Println(i)
+		}
+	}()
+
+	go func() {
+		for i := range readmessages {
+			_ = i
+			//fmt.Println(i)
+		}
+	}()
+
+	wg.Wait()
+
+	for i := 1; i <= len; i++ {
+
+		wg.Add(1)
+		go read(i)
+	}
+	wg.Wait()
+	DeleteFile(file)
 }
