@@ -7,6 +7,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -85,7 +86,7 @@ func Open(f string, cfg *Config) (*Db, error) {
 }
 
 func newDb(f string, cfg *Config) (*Db, error) {
-	//log.Println("newdb:", f)
+	log.Println("newdb1:", f)
 	var err error
 	// create
 	db := new(Db)
@@ -218,6 +219,7 @@ func (db *Db) deleteFromKeys(b []byte) {
 
 func (db *Db) sort() {
 	if !db.orderedInsert {
+		log.Println("sort")
 		sort.Slice(db.keys, func(i, j int) bool {
 			return bytes.Compare(db.keys[i], db.keys[j]) <= 0
 		})
