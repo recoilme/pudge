@@ -2,6 +2,8 @@ package pudge
 
 import (
 	"fmt"
+	"log"
+	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
@@ -268,4 +270,42 @@ func TestAsync(t *testing.T) {
 	}
 	wg.Wait()
 	DeleteFile(file)
+}
+
+func nrand(n int) []int {
+	i := make([]int, n)
+	for ind := range i {
+		i[ind] = rand.Int()
+	}
+	return i
+}
+
+func BenchmarkStore(b *testing.B) {
+	nums := nrand(b.N)
+	DeleteFile(f)
+	rm, _ := Open(f, nil)
+	b.ResetTimer()
+	for _, v := range nums {
+		rm.Set(v, v)
+	}
+	DeleteFile(f)
+}
+
+func BenchmarkLoad(b *testing.B) {
+	nums := nrand(b.N)
+	DeleteFile(f)
+	rm, _ := Open(f, nil)
+	for _, v := range nums {
+		rm.Set(v, v)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var v int
+		err := rm.Get(nums[i], &v)
+		if err != nil {
+			log.Println(err)
+			break
+		}
+	}
+	DeleteFile(f)
 }
