@@ -172,8 +172,10 @@ func (db *Db) backgroundManager(interval int) {
 			case <-ctx.Done():
 				return
 			default:
+				db.Lock()
 				db.fk.Sync()
 				db.fv.Sync()
+				db.Unlock()
 				time.Sleep(time.Duration(interval) * time.Second)
 			}
 		}

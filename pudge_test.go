@@ -236,7 +236,7 @@ func TestAsync(t *testing.T) {
 		Get(file, []byte(k), &b)
 
 		if string(b) != string(v) {
-			t.Error("not mutch")
+			t.Error("not mutch", string(b), string(v))
 		}
 		readmessages <- fmt.Sprintf("read N:%d  content:%s", i, string(b))
 	}
