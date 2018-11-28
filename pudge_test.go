@@ -1,12 +1,16 @@
 package pudge
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
+
+	"github.com/google/btree"
 )
 
 const (
@@ -285,7 +289,7 @@ func BenchmarkStore(b *testing.B) {
 	nums := nrand(b.N)
 	DeleteFile(f)
 	rm, _ := Open(f, nil)
-	b.SetBytes(int64(b.N * 8))
+	b.SetBytes(8)
 	b.ResetTimer()
 	for _, v := range nums {
 		rm.Set(v, v)
@@ -308,13 +312,14 @@ func BenchmarkLoad(b *testing.B) {
 			log.Println(err)
 			break
 		}
+
 	}
 	DeleteFile(f)
 }
 
 func BenchmarkStoreOrdered(b *testing.B) {
 	//b.N = 100000
-	nums := nrand(200000)
+	nums := nrand(b.N) //100000)
 	DeleteFile(f)
 	cfg := DefaultConfig()
 	cfg.OrderedInsert = true
@@ -334,4 +339,51 @@ func BenchmarkStoreOrdered(b *testing.B) {
 		//rm.Set(v, v)
 	}
 	DeleteFile(f)
+}
+
+func BenchmarkStoreGooglebtree(b *testing.B) {
+	//b.N = 100000
+	bt := btree.New(16)
+	//tr := New(*btreeDegree)
+
+	nums := nrand(b.N) //100000)
+	for _, v := range nums {
+		bin, _ := keyToBinary(v)
+		k := &K{key: bin}
+		bt.ReplaceOrInsert(k)
+	}
+}
+
+func BenchmarkLoadGooglebtree(b *testing.B) {
+	//b.N = 100000
+	bt := btree.New(16)
+	//log.Println("is nil")
+	//tr := New(*btreeDegree)
+
+	nums := nrand(b.N) //100000)
+	for _, v := range nums {
+		bin, _ := keyToBinary(v)
+		k := &K{key: bin}
+		bt.ReplaceOrInsert(k)
+	}
+	//log.Println("is nil")
+	b.ResetTimer()
+	for _, v := range nums {
+		bin, _ := keyToBinary(v)
+		it := bt.Get(&K{key: bin})
+
+		if it == nil {
+			log.Println("is nil")
+			//break
+		} else {
+			k := it.(*K).key
+			buf := new(bytes.Buffer)
+			buf.Write(k)
+			var v int64
+			binary.Read(buf, binary.BigEndian, &v)
+			//log.Println(v)
+			//break
+		}
+	}
+	log.Println(bt.Len())
 }

@@ -12,6 +12,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/google/btree"
 )
 
 var (
@@ -22,6 +24,8 @@ var (
 	// ErrKeyNotFound - key not found
 	ErrKeyNotFound = errors.New("Error: key not found")
 	mutex          = &sync.RWMutex{}
+
+	Btree *btree.BTree
 )
 
 // Db represent database
@@ -55,8 +59,21 @@ type Config struct {
 	OrderedInsert bool // keep keys sorted on insert
 }
 
+type K struct {
+	key []byte
+}
+
 func init() {
 	dbs.dbs = make(map[string]*Db)
+}
+
+// Less - for btree Compare
+func (i1 *K) Less(item btree.Item) bool {
+	i2 := item.(*K)
+	if bytes.Compare(i1.key, i2.key) < 0 {
+		return true
+	}
+	return false
 }
 
 // DefaultConfig return default config
