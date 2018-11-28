@@ -280,10 +280,12 @@ func nrand(n int) []int {
 	return i
 }
 
+// run go test -bench=Store -benchmem
 func BenchmarkStore(b *testing.B) {
 	nums := nrand(b.N)
 	DeleteFile(f)
 	rm, _ := Open(f, nil)
+	b.SetBytes(int64(b.N * 8))
 	b.ResetTimer()
 	for _, v := range nums {
 		rm.Set(v, v)
@@ -306,6 +308,30 @@ func BenchmarkLoad(b *testing.B) {
 			log.Println(err)
 			break
 		}
+	}
+	DeleteFile(f)
+}
+
+func BenchmarkStoreOrdered(b *testing.B) {
+	//b.N = 100000
+	nums := nrand(200000)
+	DeleteFile(f)
+	cfg := DefaultConfig()
+	cfg.OrderedInsert = true
+	rm, _ := Open(f, cfg)
+	b.ResetTimer()
+	_ = rm
+	//	keys := make([][]byte, 0)
+	for _, v := range nums {
+		//_ = v
+		bin, _ := keyToBinary(v)
+		//bb := make([]byte, 8)
+		//binary.BigEndian.PutUint64(bb, uint64(v))
+		//keys = append(keys, bin)
+		rm.Lock()
+		rm.appendKey(bin, true)
+		rm.Unlock()
+		//rm.Set(v, v)
 	}
 	DeleteFile(f)
 }

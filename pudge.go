@@ -59,6 +59,11 @@ func init() {
 	dbs.dbs = make(map[string]*Db)
 }
 
+// DefaultConfig return default config
+func DefaultConfig() *Config {
+	return &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1, OrderedInsert: false}
+}
+
 // Open return db object if it opened.
 // Create new db if not exist.
 // Read db to obj if exist.
