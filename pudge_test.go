@@ -10,6 +10,8 @@ import (
 	"sync"
 	"testing"
 
+	rbt "github.com/emirpasic/gods/trees/redblacktree"
+	"github.com/emirpasic/gods/utils"
 	"github.com/google/btree"
 )
 
@@ -386,4 +388,117 @@ func BenchmarkLoadGooglebtree(b *testing.B) {
 		}
 	}
 	log.Println(bt.Len())
+}
+
+func BinComparator(a, b interface{}) int {
+	aAsserted := a.([]byte)
+	bAsserted := b.([]byte)
+	return bytes.Compare(aAsserted, bAsserted)
+}
+
+//func NewWithBinComparator() *rbt.Tree {
+//return &rbt.Tree{utils.Comparator: BinComparator}
+//}
+
+func BenchmarkStoreGodsBtree(b *testing.B) {
+	//b.N = 100000
+	tree := rbt.NewWith(utils.BinComparator)
+
+	nums := nrand(b.N) //100000)
+	for _, v := range nums {
+		bin, _ := keyToBinary(v)
+		//s := strconv.Itoa(v)
+		tree.Put(bin, bin)
+	}
+}
+
+func BenchmarkLoadGodsbtree(b *testing.B) {
+	tree := rbt.NewWithStringComparator()
+
+	nums := nrand(b.N) //100000)
+	for _, v := range nums {
+		//bin, _ := keyToBinary(v)
+		s := strconv.Itoa(v)
+		tree.Put(s, nil)
+	}
+	b.ResetTimer()
+	for _, v := range nums {
+		s := strconv.Itoa(v)
+		tree.Get(s)
+		//	log.Println(val, found)
+	}
+	val, found := tree.Get("s")
+	log.Println(val, found)
+}
+
+func TestGods(t *testing.T) {
+	tree := rbt.NewWithStringComparator()
+
+	for i := -10; i < 22; i++ {
+		bin, _ := keyToBinary(i)
+		s := string(bin)
+		tree.Put(s, nil)
+	}
+	it := tree.Iterator()
+
+	for it.Next() {
+		k := it.Key()
+		bin := []byte(k.(string))
+		buf := new(bytes.Buffer)
+		buf.Write(bin)
+		var v int64
+		binary.Read(buf, binary.BigEndian, &v)
+		log.Println(v)
+	}
+	bin, _ := keyToBinary(5)
+	node, f := tree.Floor(string(bin))
+	k := node.Key
+	bi := []byte(k.(string))
+	log.Println(node, f, bi)
+
+}
+
+//Load
+//BenchmarkMa-4            2000000               658 ns/op          12.14 MB/s          87 B/op          2 allocs/op
+//Read
+//BenchmarkMa-4            5000000               422 ns/op          18.93 MB/s          23 B/op          1 allocs/op
+func BenchmarkMa(b *testing.B) {
+	tree := rbt.NewWithStringComparator()
+	b.SetBytes(8)
+	for i := 0; i < b.N; i++ {
+		s := strconv.Itoa(i)
+		tree.Put(s, nil)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s := strconv.Itoa(i)
+		tree.Get(s)
+	}
+	//log.Println(tree.Size())
+}
+
+//Load
+//BenchmarkHash-4          3000000               412 ns/op          19.39 MB/s         119 B/op          1 allocs/op
+//Read
+//BenchmarkHash-4         10000000               205 ns/op          39.02 MB/s           7 B/op          0 allocs/op
+func BenchmarkHash(b *testing.B) {
+	m := make(map[string]string)
+	b.SetBytes(8)
+	for i := 0; i < b.N; i++ {
+		s := strconv.Itoa(i)
+		m[s] = s
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s := strconv.Itoa(i)
+		v, ok := m[s]
+		if !ok {
+			log.Println("not ok")
+		} else {
+			//log.Println(v)
+		}
+		_ = v
+	}
+
 }
