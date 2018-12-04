@@ -1,23 +1,26 @@
 package pudge
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
-
-	rbt "github.com/emirpasic/gods/trees/redblacktree"
-	"github.com/emirpasic/gods/utils"
-	"github.com/google/btree"
 )
 
 const (
 	f = "test/1"
 )
+
+func nrandbin(n int) [][]byte {
+	i := make([][]byte, n)
+	for ind := range i {
+		bin, _ := keyToBinary(rand.Int())
+		i[ind] = bin
+	}
+	return i
+}
 
 func TestConfig(t *testing.T) {
 	_, err := Open("", nil)
@@ -278,17 +281,9 @@ func TestAsync(t *testing.T) {
 	DeleteFile(file)
 }
 
-func nrand(n int) []int {
-	i := make([]int, n)
-	for ind := range i {
-		i[ind] = rand.Int()
-	}
-	return i
-}
-
 // run go test -bench=Store -benchmem
 func BenchmarkStore(b *testing.B) {
-	nums := nrand(b.N)
+	nums := nrandbin(b.N)
 	DeleteFile(f)
 	rm, _ := Open(f, nil)
 	b.SetBytes(8)
@@ -300,7 +295,7 @@ func BenchmarkStore(b *testing.B) {
 }
 
 func BenchmarkLoad(b *testing.B) {
-	nums := nrand(b.N)
+	nums := nrandbin(b.N)
 	DeleteFile(f)
 	rm, _ := Open(f, nil)
 	for _, v := range nums {
@@ -321,7 +316,7 @@ func BenchmarkLoad(b *testing.B) {
 
 func BenchmarkStoreOrdered(b *testing.B) {
 	//b.N = 100000
-	nums := nrand(b.N) //100000)
+	nums := nrandbin(b.N) //100000)
 	DeleteFile(f)
 	cfg := DefaultConfig()
 	cfg.OrderedInsert = true
@@ -330,175 +325,11 @@ func BenchmarkStoreOrdered(b *testing.B) {
 	_ = rm
 	//	keys := make([][]byte, 0)
 	for _, v := range nums {
-		//_ = v
-		bin, _ := keyToBinary(v)
-		//bb := make([]byte, 8)
-		//binary.BigEndian.PutUint64(bb, uint64(v))
-		//keys = append(keys, bin)
+
 		rm.Lock()
-		rm.appendKey(bin, true)
+		rm.appendKey(v, true)
 		rm.Unlock()
 		//rm.Set(v, v)
 	}
 	DeleteFile(f)
-}
-
-func BenchmarkStoreGooglebtree(b *testing.B) {
-	//b.N = 100000
-	bt := btree.New(16)
-	//tr := New(*btreeDegree)
-
-	nums := nrand(b.N) //100000)
-	for _, v := range nums {
-		bin, _ := keyToBinary(v)
-		k := &K{key: bin}
-		bt.ReplaceOrInsert(k)
-	}
-}
-
-func BenchmarkLoadGooglebtree(b *testing.B) {
-	//b.N = 100000
-	bt := btree.New(16)
-	//log.Println("is nil")
-	//tr := New(*btreeDegree)
-
-	nums := nrand(b.N) //100000)
-	for _, v := range nums {
-		bin, _ := keyToBinary(v)
-		k := &K{key: bin}
-		bt.ReplaceOrInsert(k)
-	}
-	//log.Println("is nil")
-	b.ResetTimer()
-	for _, v := range nums {
-		bin, _ := keyToBinary(v)
-		it := bt.Get(&K{key: bin})
-
-		if it == nil {
-			log.Println("is nil")
-			//break
-		} else {
-			k := it.(*K).key
-			buf := new(bytes.Buffer)
-			buf.Write(k)
-			var v int64
-			binary.Read(buf, binary.BigEndian, &v)
-			//log.Println(v)
-			//break
-		}
-	}
-	log.Println(bt.Len())
-}
-
-func BinComparator(a, b interface{}) int {
-	aAsserted := a.([]byte)
-	bAsserted := b.([]byte)
-	return bytes.Compare(aAsserted, bAsserted)
-}
-
-//func NewWithBinComparator() *rbt.Tree {
-//return &rbt.Tree{utils.Comparator: BinComparator}
-//}
-
-func BenchmarkStoreGodsBtree(b *testing.B) {
-	//b.N = 100000
-	tree := rbt.NewWith(utils.BinComparator)
-
-	nums := nrand(b.N) //100000)
-	for _, v := range nums {
-		bin, _ := keyToBinary(v)
-		//s := strconv.Itoa(v)
-		tree.Put(bin, bin)
-	}
-}
-
-func BenchmarkLoadGodsbtree(b *testing.B) {
-	tree := rbt.NewWithStringComparator()
-
-	nums := nrand(b.N) //100000)
-	for _, v := range nums {
-		//bin, _ := keyToBinary(v)
-		s := strconv.Itoa(v)
-		tree.Put(s, nil)
-	}
-	b.ResetTimer()
-	for _, v := range nums {
-		s := strconv.Itoa(v)
-		tree.Get(s)
-		//	log.Println(val, found)
-	}
-	val, found := tree.Get("s")
-	log.Println(val, found)
-}
-
-func TestGods(t *testing.T) {
-	tree := rbt.NewWithStringComparator()
-
-	for i := -10; i < 22; i++ {
-		bin, _ := keyToBinary(i)
-		s := string(bin)
-		tree.Put(s, nil)
-	}
-	it := tree.Iterator()
-
-	for it.Next() {
-		k := it.Key()
-		bin := []byte(k.(string))
-		buf := new(bytes.Buffer)
-		buf.Write(bin)
-		var v int64
-		binary.Read(buf, binary.BigEndian, &v)
-		log.Println(v)
-	}
-	bin, _ := keyToBinary(5)
-	node, f := tree.Floor(string(bin))
-	k := node.Key
-	bi := []byte(k.(string))
-	log.Println(node, f, bi)
-
-}
-
-//Load
-//BenchmarkMa-4            2000000               658 ns/op          12.14 MB/s          87 B/op          2 allocs/op
-//Read
-//BenchmarkMa-4            5000000               422 ns/op          18.93 MB/s          23 B/op          1 allocs/op
-func BenchmarkMa(b *testing.B) {
-	tree := rbt.NewWithStringComparator()
-	b.SetBytes(8)
-	for i := 0; i < b.N; i++ {
-		s := strconv.Itoa(i)
-		tree.Put(s, nil)
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		s := strconv.Itoa(i)
-		tree.Get(s)
-	}
-	//log.Println(tree.Size())
-}
-
-//Load
-//BenchmarkHash-4          3000000               412 ns/op          19.39 MB/s         119 B/op          1 allocs/op
-//Read
-//BenchmarkHash-4         10000000               205 ns/op          39.02 MB/s           7 B/op          0 allocs/op
-func BenchmarkHash(b *testing.B) {
-	m := make(map[string]string)
-	b.SetBytes(8)
-	for i := 0; i < b.N; i++ {
-		s := strconv.Itoa(i)
-		m[s] = s
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		s := strconv.Itoa(i)
-		v, ok := m[s]
-		if !ok {
-			log.Println("not ok")
-		} else {
-			//log.Println(v)
-		}
-		_ = v
-	}
-
 }
