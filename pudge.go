@@ -12,8 +12,6 @@ import (
 	"sort"
 	"sync"
 	"time"
-
-	"github.com/google/btree"
 )
 
 var (
@@ -24,8 +22,6 @@ var (
 	// ErrKeyNotFound - key not found
 	ErrKeyNotFound = errors.New("Error: key not found")
 	mutex          = &sync.RWMutex{}
-
-	Btree *btree.BTree
 )
 
 // Db represent database
@@ -45,7 +41,6 @@ type Cmd struct {
 	Seek    uint32
 	Size    uint32
 	KeySeek uint32
-	//CounterVal int64
 }
 
 // Config fo db
@@ -53,32 +48,18 @@ type Cmd struct {
 // Default DirMode = 0777
 // Default SyncInterval = 1 sec, 0 - disable sync (os will sync, typically 30 sec or so)
 type Config struct {
-	FileMode      int  // 0666
-	DirMode       int  // 0777
-	SyncInterval  int  // in seconds
-	OrderedInsert bool // keep keys sorted on insert
-}
-
-type K struct {
-	key []byte
+	FileMode     int // 0666
+	DirMode      int // 0777
+	SyncInterval int // in seconds
 }
 
 func init() {
 	dbs.dbs = make(map[string]*Db)
 }
 
-// Less - for btree Compare
-func (i1 *K) Less(item btree.Item) bool {
-	i2 := item.(*K)
-	if bytes.Compare(i1.key, i2.key) < 0 {
-		return true
-	}
-	return false
-}
-
 // DefaultConfig return default config
 func DefaultConfig() *Config {
-	return &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1, OrderedInsert: false}
+	return &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1}
 }
 
 // Open return db object if it opened.
@@ -88,7 +69,7 @@ func DefaultConfig() *Config {
 // Default Config (if nil): &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1}
 func Open(f string, cfg *Config) (*Db, error) {
 	if cfg == nil {
-		cfg = &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1, OrderedInsert: false}
+		cfg = &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1}
 	}
 	dbs.RLock()
 	db, ok := dbs.dbs[f]
@@ -115,7 +96,6 @@ func newDb(f string, cfg *Config) (*Db, error) {
 	defer db.Unlock()
 	// init
 	db.name = f
-	db.orderedInsert = cfg.OrderedInsert
 	db.keys = make([][]byte, 0)
 	db.vals = make(map[string]*Cmd)
 
@@ -168,7 +148,7 @@ func newDb(f string, cfg *Config) (*Db, error) {
 		case 0:
 			if _, exists := db.vals[strkey]; !exists {
 				//write new key at keys store
-				db.appendKey(key, cfg.OrderedInsert)
+				db.appendKey(key)
 			}
 			db.vals[strkey] = cmd
 		case 1:
@@ -204,30 +184,10 @@ func (db *Db) backgroundManager(interval int) {
 	}()
 }
 
-//appendAsc insert key in slice in ascending order
-func (db *Db) appendKey(b []byte, ordered bool) {
-	if !ordered {
-		db.keys = append(db.keys, b)
-		return
-	}
-	keysLen := len(db.keys)
-	found := db.found(b)
-	if found == 0 {
-		//prepend
-		db.keys = append([][]byte{b}, db.keys...)
-
-	} else {
-		if found >= keysLen {
-			//not found - postpend ;)
-			db.keys = append(db.keys, b)
-		} else {
-			//found
-			//https://blog.golang.org/go-slices-usage-and-internals
-			db.keys = append(db.keys, nil)           //grow origin slice capacity if needed
-			copy(db.keys[found+1:], db.keys[found:]) //ha-ha, lol, 20x faster
-			db.keys[found] = b
-		}
-	}
+//appendKey insert key in slice
+func (db *Db) appendKey(b []byte) {
+	db.keys = append(db.keys, b)
+	return
 }
 
 // deleteFromKeys delete key from slice keys
@@ -241,7 +201,9 @@ func (db *Db) deleteFromKeys(b []byte) {
 }
 
 func (db *Db) sort() {
-	if !db.orderedInsert {
+	if !sort.SliceIsSorted(db.keys, func(i, j int) bool {
+		return bytes.Compare(db.keys[i], db.keys[j]) <= 0
+	}) {
 		//log.Println("sort")
 		sort.Slice(db.keys, func(i, j int) bool {
 			return bytes.Compare(db.keys[i], db.keys[j]) <= 0
@@ -249,7 +211,7 @@ func (db *Db) sort() {
 	}
 }
 
-//found return binary search result
+//found return binary search result >= key
 func (db *Db) found(b []byte) int {
 	db.sort()
 	found := sort.Search(len(db.keys), func(i int) bool {
@@ -391,7 +353,7 @@ func (db *Db) Set(key, value interface{}) error {
 	//	cmd.CounterVal = value.(int64)
 	//}
 	if !exists {
-		db.appendKey(k, db.orderedInsert)
+		db.appendKey(k)
 	}
 
 	return err

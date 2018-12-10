@@ -217,7 +217,7 @@ func TestLazyOpen(t *testing.T) {
 }
 
 func TestAsync(t *testing.T) {
-	len := 5
+	len := 5000
 	file := "test/async.db"
 	DeleteFile(file)
 	defer CloseAll()
@@ -283,53 +283,52 @@ func TestAsync(t *testing.T) {
 
 // run go test -bench=Store -benchmem
 func BenchmarkStore(b *testing.B) {
+	b.StopTimer()
 	nums := nrandbin(b.N)
+
 	DeleteFile(f)
-	rm, _ := Open(f, nil)
-	b.SetBytes(8)
-	b.ResetTimer()
-	for _, v := range nums {
-		rm.Set(v, v)
+
+	rm, err := Open(f, nil)
+	if err != nil {
+		b.Error("Open", err)
 	}
-	DeleteFile(f)
+	b.SetBytes(8)
+	b.StartTimer()
+	for _, v := range nums {
+		err = rm.Set(v, v)
+		if err != nil {
+			b.Error("Set", err)
+		}
+	}
+	b.StopTimer()
+	err = DeleteFile(f)
+	if err != nil {
+		b.Error("DeleteFile", err)
+	}
 }
 
 func BenchmarkLoad(b *testing.B) {
 	nums := nrandbin(b.N)
 	DeleteFile(f)
-	rm, _ := Open(f, nil)
+	rm, err := Open(f, nil)
+	if err != nil {
+		b.Error("Open", err)
+	}
 	for _, v := range nums {
-		rm.Set(v, v)
+		err = rm.Set(v, v)
+		if err != nil {
+			b.Error("Set", err)
+		}
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var v int
+		var v []byte
 		err := rm.Get(nums[i], &v)
 		if err != nil {
-			log.Println(err)
+			log.Println("Get", err, nums[i], &v)
 			break
 		}
-
 	}
-	DeleteFile(f)
-}
-
-func BenchmarkStoreOrdered(b *testing.B) {
-	//b.N = 100000
-	nums := nrandbin(b.N) //100000)
-	DeleteFile(f)
-	cfg := DefaultConfig()
-	cfg.OrderedInsert = true
-	rm, _ := Open(f, cfg)
-	b.ResetTimer()
-	_ = rm
-	//	keys := make([][]byte, 0)
-	for _, v := range nums {
-
-		rm.Lock()
-		rm.appendKey(v, true)
-		rm.Unlock()
-		//rm.Set(v, v)
-	}
+	log.Println(rm.Count())
 	DeleteFile(f)
 }

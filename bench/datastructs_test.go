@@ -1,12 +1,12 @@
-package tests
+package ss
 
 import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
-	"fmt"
 	"log"
 	"math/rand"
+	"sort"
 	"strconv"
 	"testing"
 
@@ -53,24 +53,35 @@ func TestArt(t *testing.T) {
 		var j int64
 		binary.Read(buf, binary.BigEndian, &j)
 		//binary.Read(bytes.Reader(b.([]byte)), binary.BigEndian, &j)
-		fmt.Printf("Callback value=%v\n", j)
+		//fmt.Printf("Callback value=%v\n", j)
 		return true
 	})
 
 	for it := tree.Iterator(); it.HasNext(); {
 		value, _ := it.Next()
-		fmt.Printf("Iterator value=%v\n", value.Value())
+		_ = value
+		//fmt.Printf("Iterator value=%v\n", value.Value())
 	}
-	fmt.Println(tree)
+	//fmt.Println(tree)
 }
 
 func nrandbin(n int) [][]byte {
-	i := make([][]byte, n)
-	for ind := range i {
-		bin, _ := keyToBinary(rand.Int())
-		i[ind] = bin
+	bins := make([][]byte, n)
+	for i := 0; i < n; i++ {
+		bin, _ := keyToBinary(i)
+		bins[i] = bin
 	}
-	return i
+	return bins
+}
+
+// Keys generator
+func randKeys(totalKeys int) [][]byte {
+	keys := make([][]byte, totalKeys)
+	for i := range keys {
+		keys[i] = make([]byte, 8)
+		rand.Read(keys[i])
+	}
+	return keys
 }
 
 //BenchmarkArtSetRand-4            2000000               888 ns/op           9.01 MB/s         129 B/op          3 allocs/op
@@ -206,4 +217,69 @@ func BenchmarkSLSet(b *testing.B) {
 		bin, _ := keyToBinary(i)
 		list.Set(bin, nil)
 	}
+}
+
+func TestSSNew(t *testing.T) {
+	ss := New()
+	ss.Set([]byte("1"))
+	log.Println(ss)
+}
+
+//BenchmarkSlice-4        20000000               309 ns/op          25.82 MB/s
+func BenchmarkSlice(b *testing.B) {
+	b.StopTimer()
+	s := make([][]byte, 0)
+	bins := randKeys(b.N)
+	//b.ResetTimer()
+	//b.SetBytes(8)
+	for _, v := range bins {
+		s = append(s, v)
+
+	}
+	b.StartTimer()
+	if !sort.SliceIsSorted(s, func(i, j int) bool {
+		return bytes.Compare(s[i], s[j]) > 0
+	}) {
+		s = sortSlice(s)
+	}
+
+	b.StopTimer()
+	for i, j := range s {
+		log.Println(binary.BigEndian.Uint64(j), j)
+		if i > 4 {
+			log.Println("=====")
+			break
+		}
+	}
+
+}
+
+func bubleSort(x [][]byte) [][]byte {
+	end := len(x) - 1
+
+	for {
+
+		if end == 0 {
+			break
+		}
+
+		for i := 0; i < len(x)-1; i++ {
+
+			if bytes.Compare(x[i], x[i+1]) <= 0 {
+				x[i], x[i+1] = x[i+1], x[i]
+			}
+
+		}
+
+		end -= 1
+
+	}
+	return x
+}
+
+func sortSlice(s [][]byte) [][]byte {
+	sort.Slice(s, func(i, j int) bool {
+		return bytes.Compare(s[i], s[j]) > 0
+	})
+	return s
 }
