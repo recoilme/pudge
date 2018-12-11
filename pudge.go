@@ -186,6 +186,7 @@ func (db *Db) backgroundManager(interval int) {
 
 //appendKey insert key in slice
 func (db *Db) appendKey(b []byte) {
+	//log.Println("append")
 	db.keys = append(db.keys, b)
 	return
 }
@@ -223,35 +224,41 @@ func (db *Db) found(b []byte) int {
 func keyToBinary(v interface{}) ([]byte, error) {
 	var err error
 
-	buf := new(bytes.Buffer)
 	switch v.(type) {
 	case []byte:
 		return v.([]byte), nil
 	case bool, float32, float64, complex64, complex128, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		buf := new(bytes.Buffer)
 		err = binary.Write(buf, binary.BigEndian, v)
+		return buf.Bytes(), err
 	case int:
+		buf := new(bytes.Buffer)
 		err = binary.Write(buf, binary.BigEndian, int64(v.(int)))
+		return buf.Bytes(), err
 	case string:
+		buf := new(bytes.Buffer)
 		_, err = buf.Write([]byte((v.(string))))
+		return buf.Bytes(), err
 	default:
+		buf := new(bytes.Buffer)
 		err = gob.NewEncoder(buf).Encode(v)
+		return buf.Bytes(), err
 	}
-	return buf.Bytes(), err
 }
 
 func valToBinary(v interface{}) ([]byte, error) {
 	var err error
-	buf := new(bytes.Buffer)
 	switch v.(type) {
 	case []byte:
 		return v.([]byte), nil
 	default:
+		buf := new(bytes.Buffer)
 		err = gob.NewEncoder(buf).Encode(v)
 		if err != nil {
 			return nil, err
 		}
+		return buf.Bytes(), err
 	}
-	return buf.Bytes(), err
 }
 
 func writeKeyVal(fk, fv *os.File, readKey, writeVal []byte, exists bool, oldCmd *Cmd) (cmd *Cmd, err error) {

@@ -308,6 +308,7 @@ func BenchmarkStore(b *testing.B) {
 }
 
 func BenchmarkLoad(b *testing.B) {
+	b.StopTimer()
 	nums := nrandbin(b.N)
 	DeleteFile(f)
 	rm, err := Open(f, nil)
@@ -320,15 +321,25 @@ func BenchmarkLoad(b *testing.B) {
 			b.Error("Set", err)
 		}
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var v []byte
-		err := rm.Get(nums[i], &v)
-		if err != nil {
-			log.Println("Get", err, nums[i], &v)
-			break
-		}
+	var wg sync.WaitGroup
+	read := func(db *Db, key []byte) {
+		defer wg.Done()
+		var b []byte
+		db.Get(key, &b)
 	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		wg.Add(1)
+		go read(rm, nums[i])
+		//var v []byte
+		//err := rm.Get(nums[i], &v)
+		//if err != nil {
+		//	log.Println("Get", err, nums[i], &v)
+		//	break
+		//}
+	}
+	wg.Wait()
+	b.StopTimer()
 	log.Println(rm.Count())
 	DeleteFile(f)
 }
