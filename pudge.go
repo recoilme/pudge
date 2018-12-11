@@ -27,13 +27,12 @@ var (
 // Db represent database
 type Db struct {
 	sync.RWMutex
-	name          string
-	fk            *os.File
-	fv            *os.File
-	keys          [][]byte
-	vals          map[string]*Cmd
-	cancelSyncer  context.CancelFunc
-	orderedInsert bool
+	name         string
+	fk           *os.File
+	fv           *os.File
+	keys         [][]byte
+	vals         map[string]*Cmd
+	cancelSyncer context.CancelFunc
 }
 
 // Cmd represent keys and vals addresses
@@ -232,13 +231,15 @@ func keyToBinary(v interface{}) ([]byte, error) {
 		err = binary.Write(buf, binary.BigEndian, v)
 		return buf.Bytes(), err
 	case int:
+		//binary.BigEndian.Uint32(buf.Next(4))
 		buf := new(bytes.Buffer)
 		err = binary.Write(buf, binary.BigEndian, int64(v.(int)))
 		return buf.Bytes(), err
 	case string:
-		buf := new(bytes.Buffer)
-		_, err = buf.Write([]byte((v.(string))))
-		return buf.Bytes(), err
+		//buf := new(bytes.Buffer)
+		//_, err = buf.Write([]byte((v.(string))))
+		//return buf.Bytes(), err
+		return []byte(v.(string)), nil
 	default:
 		buf := new(bytes.Buffer)
 		err = gob.NewEncoder(buf).Encode(v)
