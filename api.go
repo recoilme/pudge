@@ -116,6 +116,7 @@ func (db *Db) DeleteFile() error {
 	return DeleteFile(db.name)
 }
 
+// DeleteFile close db and delete file
 func DeleteFile(file string) error {
 	dbs.Lock()
 	db, ok := dbs.dbs[file]
