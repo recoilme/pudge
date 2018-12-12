@@ -194,6 +194,9 @@ func TestCounter(t *testing.T) {
 	key := []byte("postcounter")
 	for i := 0; i < 10; i++ {
 		counter, err = db.Counter(key, 1)
+		if err != nil {
+			t.Error(err)
+		}
 		//log.Println(counter, err)
 	}
 	//return
@@ -208,7 +211,7 @@ func TestCounter(t *testing.T) {
 	}
 	key2 := []byte("counter2")
 	for i := 0; i < 5; i++ {
-		counter, err = db.Counter(key2, 1)
+		counter, _ = db.Counter(key2, 1)
 	}
 
 	for i := 0; i < 5; i++ {
