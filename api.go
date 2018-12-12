@@ -321,3 +321,13 @@ func Counter(f string, key interface{}, incr int) (int64, error) {
 	}
 	return db.Counter(key, incr)
 }
+
+// Delete remove key
+// Returns error if key not found
+func Delete(f string, key interface{}) error {
+	db, err := Open(f, nil)
+	if err != nil {
+		return err
+	}
+	return db.Delete(key)
+}
