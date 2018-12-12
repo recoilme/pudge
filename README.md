@@ -7,12 +7,13 @@ Package pudge is a simple key/value store written using Go's standard library on
 
 It presents the following:
 * Supporting very efficient lookup, insertions and deletions
-* Space efficient
 * Performance is comparable to hash tables
 * Ability to get the data in sorted order, which enables additional operations like range scan
-* Select with limit/offset/from key/with ordering
+* Select with limit/offset/from key, with ordering
 * Safe for use in goroutines
+* Space efficient
 * Very short and simple codebase
+* Well tested, used in production
 
 **Usage**
 
