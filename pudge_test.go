@@ -120,10 +120,7 @@ func TestKeys(t *testing.T) {
 	append := func(i int) {
 		k := []byte(fmt.Sprintf("%02d", i))
 		v := []byte("Val:" + strconv.Itoa(i))
-		err := db.Set(k, v)
-		if err != nil {
-			t.Error(err)
-		}
+		db.Set(k, v)
 	}
 	for i := 20; i >= 1; i-- {
 		append(i)
@@ -143,10 +140,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	//descending
-	resdesc, err := db.Keys(nil, 0, 0, false)
-	if err != nil {
-		t.Error(err)
-	}
+	resdesc, _ := db.Keys(nil, 0, 0, false)
 	s = ""
 	for _, r := range resdesc {
 		s += string(r)
@@ -156,10 +150,8 @@ func TestKeys(t *testing.T) {
 	}
 
 	//offset limit asc
-	reslimit, err := db.Keys(nil, 2, 2, true)
-	if err != nil {
-		t.Error(err)
-	}
+	reslimit, _ := db.Keys(nil, 2, 2, true)
+
 	s = ""
 	for _, r := range reslimit {
 		s += string(r)
@@ -169,10 +161,8 @@ func TestKeys(t *testing.T) {
 	}
 
 	//offset limit desc
-	reslimitdesc, err := db.Keys(nil, 2, 2, false)
-	if err != nil {
-		t.Error(err)
-	}
+	reslimitdesc, _ := db.Keys(nil, 2, 2, false)
+
 	s = ""
 	for _, r := range reslimitdesc {
 		s += string(r)
