@@ -291,7 +291,7 @@ func (db *Db) Counter(key interface{}, incr int) (int64, error) {
 	counter = counter + int64(incr)
 	mutex.Unlock()
 	err = db.Set(key, counter)
-	return counter, nil
+	return counter, err
 }
 
 // Set store any key value to db with opening if needed

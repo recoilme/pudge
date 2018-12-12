@@ -131,6 +131,9 @@ func TestKeys(t *testing.T) {
 
 	//ascending
 	res, err := db.Keys(nil, 0, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
 	var s = ""
 	for _, r := range res {
 		s += string(r)
@@ -141,6 +144,9 @@ func TestKeys(t *testing.T) {
 
 	//descending
 	resdesc, err := db.Keys(nil, 0, 0, false)
+	if err != nil {
+		t.Error(err)
+	}
 	s = ""
 	for _, r := range resdesc {
 		s += string(r)
@@ -151,6 +157,9 @@ func TestKeys(t *testing.T) {
 
 	//offset limit asc
 	reslimit, err := db.Keys(nil, 2, 2, true)
+	if err != nil {
+		t.Error(err)
+	}
 	s = ""
 	for _, r := range reslimit {
 		s += string(r)
@@ -161,6 +170,9 @@ func TestKeys(t *testing.T) {
 
 	//offset limit desc
 	reslimitdesc, err := db.Keys(nil, 2, 2, false)
+	if err != nil {
+		t.Error(err)
+	}
 	s = ""
 	for _, r := range reslimitdesc {
 		s += string(r)
@@ -187,6 +199,9 @@ func TestCounter(t *testing.T) {
 	//return
 	for i := 0; i < 10; i++ {
 		counter, err = db.Counter(key, 1)
+		if err != nil {
+			t.Error(err)
+		}
 	}
 	if counter != 20 {
 		t.Error("counter!=20")
@@ -198,6 +213,9 @@ func TestCounter(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		counter, err = db.Counter(key2, 1)
+		if err != nil {
+			t.Error(err)
+		}
 	}
 	if counter != 10 {
 		t.Error("counter!=10")
