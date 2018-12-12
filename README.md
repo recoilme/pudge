@@ -33,13 +33,13 @@ func main() {
 	ExampleOpen()
 }
 
-//ExampleSet lazy
+//ExampleSet (lazy open)
 func ExampleSet() {
 	pudge.Set("../test/test", "Hello", "World")
 	defer pudge.CloseAll()
 }
 
-//ExampleGet lazy
+//ExampleGet (lazy open)
 func ExampleGet() {
 	output := ""
 	pudge.Get("../test/test", "Hello", &output)
@@ -48,7 +48,7 @@ func ExampleGet() {
 	defer pudge.CloseAll()
 }
 
-//ExampleOpen complex example
+//ExampleOpen (complex example)
 func ExampleOpen() {
 	cfg := pudge.DefaultConfig()
 	cfg.SyncInterval = 0 //disable every second fsync
