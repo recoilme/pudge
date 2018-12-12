@@ -10,14 +10,9 @@ It presents the following:
 * Space efficient
 * Performance is comparable to hash tables
 * Ability to get the data in sorted order, which enables additional operations like range scan
-
-**Time complexity in big O notation**
-* Algorithm		Average	Worst case
-* Space		    O(n)	  O(n)
-* Search		  O(1)	  O(n)
-* Insert		  O(1)	  O(n)
-* Delete		  O(1)	  O(n)
-
+* Select with limit/offset/from key/with ordering
+* No concurrency modifications/ safe for use in goroutines
+* Very short and simple codebase
 
 **Usage**
 
