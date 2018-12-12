@@ -12,8 +12,8 @@ It presents the following:
 * Ability to get the data in sorted order, which enables additional operations like range scan
 
 **Time complexity in big O notation**
- Algorithm		Average	Worst case
-* Space		    O(n)[1]	O(n)
+* Algorithm		Average	Worst case
+* Space		    O(n)	  O(n)
 * Search		  O(1)	  O(n)
 * Insert		  O(1)	  O(n)
 * Delete		  O(1)	  O(n)
