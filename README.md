@@ -11,7 +11,7 @@ It presents the following:
 * Performance is comparable to hash tables
 * Ability to get the data in sorted order, which enables additional operations like range scan
 * Select with limit/offset/from key/with ordering
-* No concurrency modifications/ safe for use in goroutines
+* Safe for use in goroutines
 * Very short and simple codebase
 
 **Usage**
