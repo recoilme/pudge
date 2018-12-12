@@ -1,16 +1,16 @@
 // Package pudge implements a low-level key/value store in pure Go.
 // Keys stored in memory, Value stored on disk
-
+//
 // Usage
-
+//
 //	package main
-
+//
 //	import (
 //		"log"
-
+//
 //		"github.com/recoilme/pudge"
 //	)
-
+//
 //	func main() {
 //		ExampleSet()
 //		ExampleGet()
@@ -18,13 +18,13 @@
 //		ExampleDeleteFile()
 //		ExampleOpen()
 //	}
-
+//
 //	//ExampleSet lazy
 //	func ExampleSet() {
 //		pudge.Set("../test/test", "Hello", "World")
 //		defer pudge.CloseAll()
 //	}
-
+//
 //	//ExampleGet lazy
 //	func ExampleGet() {
 //		output := ""
@@ -33,7 +33,7 @@
 //		// Output: World
 //		defer pudge.CloseAll()
 //	}
-
+//
 //	//ExampleDelete lazy
 //	func ExampleDelete() {
 //		err := pudge.Delete("../test/test", "Hello")
@@ -41,7 +41,7 @@
 //			log.Println(err)
 //		}
 //	}
-
+//
 //	//ExampleDeleteFile lazy
 //	func ExampleDeleteFile() {
 //		err := pudge.DeleteFile("../test/test")
@@ -49,7 +49,7 @@
 //			log.Panic(err)
 //		}
 //	}
-
+//
 //	//ExampleOpen complex example
 //	func ExampleOpen() {
 //		cfg := pudge.DefaultConfig()
