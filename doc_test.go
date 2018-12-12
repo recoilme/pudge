@@ -24,15 +24,6 @@ func ExampleOpen() {
 	db.Get(8, &point)
 	log.Println(point)
 	// Output: {8 8}
-	// Select 2 keys, from 7 in ascending order
-	keys, _ := db.Keys(7, 2, 0, true)
-	for _, key := range keys {
-		var p Point
-		db.Get(key, &p)
-		log.Println(p)
-	}
-	// Output: {8 8}
-	// Output: {9 9}
 }
 func ExampleSet() {
 	Set("test/test", "Hello", "World")
