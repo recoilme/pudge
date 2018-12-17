@@ -1,6 +1,7 @@
 package pudge
 
 import (
+	"fmt"
 	"log"
 )
 
@@ -22,7 +23,7 @@ func ExampleOpen() {
 	}
 	var point Point
 	db.Get(8, &point)
-	log.Println(point)
+	fmt.Println(point)
 	// Output: {8 8}
 }
 func ExampleSet() {
@@ -34,6 +35,8 @@ func ExampleGet() {
 	Set("test/test", "Hello", "World")
 	output := ""
 	Get("test/test", "Hello", &output)
-	log.Println("output:", output)
 	defer CloseAll()
+	fmt.Println(output)
+	// Output: World
+	DeleteFile("test/test")
 }

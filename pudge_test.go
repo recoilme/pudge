@@ -292,6 +292,43 @@ func TestAsync(t *testing.T) {
 	DeleteFile(file)
 }
 
+func TestStoreMode(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.StoreMode = 2
+	db, err := Open("test/sm", cfg)
+	if err != nil {
+		t.Error(err)
+	}
+	err = db.Set(1, 2)
+	if err != nil {
+		t.Error(err)
+	}
+	var v int
+	err = db.Get(1, &v)
+	if err != nil {
+		t.Error(err)
+	}
+	if v != 2 {
+		t.Error("not 2")
+	}
+	db.Set(1, 42)
+	db.Close()
+	db, err = Open("test/sm", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	err = db.Get(1, &v)
+	if err != nil {
+		t.Error(err)
+	}
+	if v != 42 {
+		t.Error("not 42")
+	}
+	DeleteFile("test/sm")
+	//log.Println(v)
+	//CloseAll()
+}
+
 // run go test -bench=Store -benchmem
 func BenchmarkStore(b *testing.B) {
 	b.StopTimer()

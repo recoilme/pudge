@@ -8,7 +8,7 @@ import (
 
 // DefaultConfig return default config
 func DefaultConfig() *Config {
-	return &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1}
+	return &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1, StoreMode: 0}
 }
 
 // Open return db object if it opened.
@@ -18,7 +18,7 @@ func DefaultConfig() *Config {
 // Default Config (if nil): &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1}
 func Open(f string, cfg *Config) (*Db, error) {
 	if cfg == nil {
-		cfg = &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 1}
+		cfg = DefaultConfig()
 	}
 	dbs.RLock()
 	db, ok := dbs.dbs[f]
@@ -50,15 +50,20 @@ func (db *Db) Set(key, value interface{}) error {
 	}
 	//log.Println("Set:", k, v)
 	oldCmd, exists := db.vals[string(k)]
-	cmd, err := writeKeyVal(db.fk, db.fv, k, v, exists, oldCmd)
-	if err != nil {
-		return err
+	//fmt.Println("StoreMode", db.config.StoreMode)
+	if db.config.StoreMode == 2 {
+		cmd := &Cmd{}
+		cmd.Size = uint32(len(v))
+		cmd.Val = make([]byte, len(v))
+		copy(cmd.Val, v)
+		db.vals[string(k)] = cmd
+	} else {
+		cmd, err := writeKeyVal(db.fk, db.fv, k, v, exists, oldCmd)
+		if err != nil {
+			return err
+		}
+		db.vals[string(k)] = cmd
 	}
-	db.vals[string(k)] = cmd
-	//switch value.(type) {
-	//case int64:
-	//	cmd.CounterVal = value.(int64)
-	//}
 	if !exists {
 		db.appendKey(k)
 	}
@@ -66,14 +71,72 @@ func (db *Db) Set(key, value interface{}) error {
 	return err
 }
 
+// Get return value by key
+// Return error if any.
+func (db *Db) Get(key, value interface{}) error {
+	db.RLock()
+	defer db.RUnlock()
+	k, err := keyToBinary(key)
+	if err != nil {
+		return err
+	}
+	if val, ok := db.vals[string(k)]; ok {
+		switch value.(type) {
+		case *[]byte:
+			b := make([]byte, val.Size)
+			if db.config.StoreMode == 2 {
+				copy(b, val.Val)
+			} else {
+				_, err := db.fv.ReadAt(b, int64(val.Seek))
+				if err != nil {
+					return err
+				}
+			}
+			*value.(*[]byte) = b
+			return nil
+		default:
+
+			buf := new(bytes.Buffer)
+			b := make([]byte, val.Size)
+			if db.config.StoreMode == 2 {
+				//fmt.Println(val)
+				copy(b, val.Val)
+			} else {
+				_, err := db.fv.ReadAt(b, int64(val.Seek))
+				if err != nil {
+					return err
+				}
+			}
+			buf.Write(b)
+			err = gob.NewDecoder(buf).Decode(value)
+			return err
+		}
+	}
+	return ErrKeyNotFound
+}
+
 // Close - sync & close files.
 // Return error if any.
 func (db *Db) Close() error {
+	//fmt.Println("Close")
 	if db.cancelSyncer != nil {
 		db.cancelSyncer()
 	}
 	db.Lock()
 	defer db.Unlock()
+
+	if db.config.StoreMode == 2 {
+		db.sort()
+		keys := db.keys
+		db.config.StoreMode = 0
+		db.Unlock()
+		for _, k := range keys {
+			if val, ok := db.vals[string(k)]; ok {
+				db.Set(k, val.Val)
+			}
+		}
+		db.Lock()
+	}
 	err := db.fk.Sync()
 	if err != nil {
 		return err
@@ -136,43 +199,6 @@ func DeleteFile(file string) error {
 	}
 	err = os.Remove(file + ".idx")
 	return err
-}
-
-// Get return value by key
-// Return error if any.
-func (db *Db) Get(key, value interface{}) error {
-	db.RLock()
-	defer db.RUnlock()
-	k, err := keyToBinary(key)
-	if err != nil {
-		return err
-	}
-	if val, ok := db.vals[string(k)]; ok {
-		switch value.(type) {
-		//case *int64:
-		//	*value.(*int64) = val.CounterVal
-		case *[]byte:
-			b := make([]byte, val.Size)
-			_, err := db.fv.ReadAt(b, int64(val.Seek))
-			if err != nil {
-				return err
-			}
-			*value.(*[]byte) = b
-			return nil
-		default:
-
-			buf := new(bytes.Buffer)
-			b := make([]byte, val.Size)
-			_, err := db.fv.ReadAt(b, int64(val.Seek))
-			if err != nil {
-				return err
-			}
-			buf.Write(b)
-			err = gob.NewDecoder(buf).Decode(value)
-			return err
-		}
-	}
-	return ErrKeyNotFound
 }
 
 // Has return true if key exists.
