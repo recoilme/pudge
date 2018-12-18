@@ -355,27 +355,48 @@ func startFrom(a, b []byte) bool {
 	return bytes.Compare(a[:len(b)], b) == 0
 }
 
-func (db *Db) foundSort(b []byte, asc bool) int {
+func (db *Db) foundPref(b []byte, asc bool) int {
 	db.sort()
 	if asc {
 		return sort.Search(len(db.keys), func(i int) bool {
 			return bytes.Compare(db.keys[i], b) >= 0
 		})
 	}
-	first := sort.Search(len(db.keys), func(i int) bool {
-		return bytes.Compare(db.keys[i], b) >= 0
-	})
-	if first == len(db.keys) {
-		return first
-	}
-	//log.Println(first)
-	var j = 0
-	for i := first; i < len(db.keys); i++ {
-		if !startFrom(db.keys[i], b) {
+	var j int
+	for j = len(db.keys) - 1; j >= 0; j-- {
+		if startFrom(db.keys[j], b) {
 			break
-		} else {
-			j = i
 		}
 	}
 	return j
+}
+
+func checkInterval(find, limit, offset, excludeFrom, len int, asc bool) (int, int) {
+	end := 0
+	start := find
+
+	if asc {
+		start += (offset + excludeFrom)
+		if limit == 0 {
+			end = len - excludeFrom
+		} else {
+			end = (start + limit - 1)
+		}
+	} else {
+		start -= (offset + excludeFrom)
+		if limit == 0 {
+			end = 0
+		} else {
+			end = start - limit + 1
+		}
+	}
+
+	if end < 0 {
+		end = 0
+	}
+	if end >= len {
+		end = len - 1
+	}
+
+	return start, end
 }

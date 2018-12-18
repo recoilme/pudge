@@ -266,41 +266,15 @@ func (db *Db) KeysByPrefix(prefix []byte, limit, offset int, asc bool) ([][]byte
 	// resulting array
 	arr := make([][]byte, 0, 0)
 
-	db.sort()
-	start := db.foundSort(prefix, asc)
-	//log.Println("found", start)
-	// check found asc
-	if start >= len(db.keys) {
-		return arr, ErrKeyNotFound
-	}
+	found := db.foundPref(prefix, asc)
 
-	if !startFrom(db.keys[start], prefix) {
+	if !startFrom(db.keys[found], prefix) {
 		//not found
 		return arr, ErrKeyNotFound
 	}
-	end := 0
 
-	if asc {
-		start += offset
-		if limit == 0 {
-			end = len(db.keys)
-		} else {
-			end = (start + limit - 1)
-		}
-	} else {
-		start -= (offset)
-		if limit == 0 {
-			end = 0
-		} else {
-			end = start - limit + 1
-		}
-	}
-	if end < 0 {
-		end = 0
-	}
-	if end >= len(db.keys) {
-		end = len(db.keys) - 1
-	}
+	start, end := checkInterval(found, limit, offset, 0, len(db.keys), asc)
+
 	if start < 0 || start >= len(db.keys) {
 		return arr, nil
 	}
@@ -347,36 +321,13 @@ func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, err
 	db.RLock()
 	defer db.RUnlock()
 
-	end := 0
-	start, _ := db.findKey(from, asc)
-	//fmt.Println(start, end)
-	if asc {
-		start += (offset + excludeFrom)
-		if limit == 0 {
-			end = len(db.keys) - excludeFrom
-		} else {
-			end = (start + limit - 1)
-		}
-	} else {
-		start -= (offset + excludeFrom)
-		if limit == 0 {
-			end = 0
-		} else {
-			end = start - limit + 1
-		}
-	}
-
-	if end < 0 {
-		end = 0
-	}
-	if end >= len(db.keys) {
-		end = len(db.keys) - 1
-	}
+	find, _ := db.findKey(from, asc)
+	start, end := checkInterval(find, limit, offset, excludeFrom, len(db.keys), asc)
 
 	if start < 0 || start >= len(db.keys) {
 		return arr, nil
 	}
-	//fmt.Println(1)
+
 	if asc {
 		for i := start; i <= end; i++ {
 			arr = append(arr, db.keys[i])
@@ -439,4 +390,16 @@ func Delete(f string, key interface{}) error {
 		return err
 	}
 	return db.Delete(key)
+}
+
+// Keys return keys in ascending  or descending order (false - descending,true - ascending)
+// if limit == 0 return all keys
+// if offset > 0 - skip offset records
+// If from not nil - return keys after from (from not included)
+func Keys(f string, from interface{}, limit, offset int, asc bool) ([][]byte, error) {
+	db, err := Open(f, nil)
+	if err != nil {
+		return nil, err
+	}
+	return db.Keys(from, limit, offset, asc)
 }

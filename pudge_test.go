@@ -122,7 +122,7 @@ func TestKeys(t *testing.T) {
 		v := []byte("Val:" + strconv.Itoa(i))
 		db.Set(k, v)
 	}
-	for i := 20; i >= 1; i-- {
+	for i := 22; i >= 1; i-- {
 		append(i)
 	}
 
@@ -135,7 +135,7 @@ func TestKeys(t *testing.T) {
 	for _, r := range res {
 		s += string(r)
 	}
-	if s != "0102030405060708091011121314151617181920" {
+	if s != "01020304050607080910111213141516171819202122" {
 		t.Error("not asc", s)
 	}
 
@@ -145,7 +145,7 @@ func TestKeys(t *testing.T) {
 	for _, r := range resdesc {
 		s += string(r)
 	}
-	if s != "2019181716151413121110090807060504030201" {
+	if s != "22212019181716151413121110090807060504030201" {
 		t.Error("not desc", s)
 	}
 
@@ -167,7 +167,7 @@ func TestKeys(t *testing.T) {
 	for _, r := range reslimitdesc {
 		s += string(r)
 	}
-	if s != "1817" {
+	if s != "2019" {
 		t.Error("not off desc", s)
 	}
 
@@ -212,12 +212,12 @@ func TestKeys(t *testing.T) {
 	}
 
 	//by prefix
-	respref, err := db.Keys([]byte("2*"), 2, 0, false)
+	respref, err := db.Keys([]byte("2*"), 4, 0, false)
 	s = ""
 	for _, r := range respref {
 		s += string(r)
 	}
-	if s != "20" {
+	if s != "222120" {
 		t.Error("respref", s)
 	}
 
