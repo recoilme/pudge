@@ -170,7 +170,7 @@ func (db *Db) appendKey(b []byte) {
 
 // deleteFromKeys delete key from slice keys
 func (db *Db) deleteFromKeys(b []byte) {
-	found := db.found(b)
+	found := db.found(b, true)
 	if found < len(db.keys) {
 		if bytes.Equal(db.keys[found], b) {
 			db.keys = append(db.keys[:found], db.keys[found+1:]...)
@@ -189,13 +189,17 @@ func (db *Db) lessBinary(i, j int) bool {
 	return bytes.Compare(db.keys[i], db.keys[j]) <= 0
 }
 
-//found return binary search result >= key
-func (db *Db) found(b []byte) int {
+//found return binary search result with sort order
+func (db *Db) found(b []byte, asc bool) int {
 	db.sort()
-	found := sort.Search(len(db.keys), func(i int) bool {
+	//if asc {
+	return sort.Search(len(db.keys), func(i int) bool {
 		return bytes.Compare(db.keys[i], b) >= 0
 	})
-	return found
+	//}
+	//return sort.Search(len(db.keys), func(i int) bool {
+	//	return bytes.Compare(db.keys[i], b) <= 0
+	//})
 }
 
 func keyToBinary(v interface{}) ([]byte, error) {
@@ -328,7 +332,8 @@ func (db *Db) findKey(key interface{}, asc bool) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	found := db.found(k)
+	found := db.found(k, asc)
+	//log.Println("found", found)
 	// check found
 	if found >= len(db.keys) {
 		return -1, ErrKeyNotFound
@@ -337,4 +342,40 @@ func (db *Db) findKey(key interface{}, asc bool) (int, error) {
 		return -1, ErrKeyNotFound
 	}
 	return found, nil
+}
+
+// startFrom return is a start from b in binary
+func startFrom(a, b []byte) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	if len(a) < len(b) {
+		return false
+	}
+	return bytes.Compare(a[:len(b)], b) == 0
+}
+
+func (db *Db) foundSort(b []byte, asc bool) int {
+	db.sort()
+	if asc {
+		return sort.Search(len(db.keys), func(i int) bool {
+			return bytes.Compare(db.keys[i], b) >= 0
+		})
+	}
+	first := sort.Search(len(db.keys), func(i int) bool {
+		return bytes.Compare(db.keys[i], b) >= 0
+	})
+	if first == len(db.keys) {
+		return first
+	}
+	//log.Println(first)
+	var j = 0
+	for i := first; i < len(db.keys); i++ {
+		if !startFrom(db.keys[i], b) {
+			break
+		} else {
+			j = i
+		}
+	}
+	return j
 }

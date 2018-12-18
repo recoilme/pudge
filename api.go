@@ -255,19 +255,101 @@ func (db *Db) Delete(key interface{}) error {
 	return ErrKeyNotFound
 }
 
+// KeysByPrefix return keys with prefix
+// in ascending  or descending order (false - descending,true - ascending)
+// if limit == 0 return all keys
+// if offset > 0 - skip offset records
+// If from not nil - return keys after from (from not included)
+func (db *Db) KeysByPrefix(prefix []byte, limit, offset int, asc bool) ([][]byte, error) {
+	db.RLock()
+	defer db.RUnlock()
+	// resulting array
+	arr := make([][]byte, 0, 0)
+
+	db.sort()
+	start := db.foundSort(prefix, asc)
+	//log.Println("found", start)
+	// check found asc
+	if start >= len(db.keys) {
+		return arr, ErrKeyNotFound
+	}
+
+	if !startFrom(db.keys[start], prefix) {
+		//not found
+		return arr, ErrKeyNotFound
+	}
+	end := 0
+
+	if asc {
+		start += offset
+		if limit == 0 {
+			end = len(db.keys)
+		} else {
+			end = (start + limit - 1)
+		}
+	} else {
+		start -= (offset)
+		if limit == 0 {
+			end = 0
+		} else {
+			end = start - limit + 1
+		}
+	}
+	if end < 0 {
+		end = 0
+	}
+	if end >= len(db.keys) {
+		end = len(db.keys) - 1
+	}
+	if start < 0 || start >= len(db.keys) {
+		return arr, nil
+	}
+
+	if asc {
+		for i := start; i <= end; i++ {
+			if !startFrom(db.keys[i], prefix) {
+				break
+			}
+			arr = append(arr, db.keys[i])
+		}
+	} else {
+		for i := start; i >= end; i-- {
+			if !startFrom(db.keys[i], prefix) {
+				break
+			}
+			arr = append(arr, db.keys[i])
+		}
+	}
+	return arr, nil
+}
+
 // Keys return keys in ascending  or descending order (false - descending,true - ascending)
 // if limit == 0 return all keys
 // if offset > 0 - skip offset records
 // If from not nil - return keys after from (from not included)
 func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, error) {
-	db.RLock()
-	defer db.RUnlock()
-	end := 0
-	start, _ := db.findKey(from, asc)
+	// resulting array
+	arr := make([][]byte, 0, 0)
 	excludeFrom := 0
 	if from != nil {
 		excludeFrom = 1
+
+		k, err := keyToBinary(from)
+		if err != nil {
+			return arr, err
+		}
+		if bytes.Equal(k[len(k)-1:], []byte("*")) {
+			prefix := make([]byte, len(k)-1)
+			copy(prefix, k)
+			return db.KeysByPrefix(prefix, limit, offset, asc)
+		}
 	}
+	db.RLock()
+	defer db.RUnlock()
+
+	end := 0
+	start, _ := db.findKey(from, asc)
+	//fmt.Println(start, end)
 	if asc {
 		start += (offset + excludeFrom)
 		if limit == 0 {
@@ -283,17 +365,18 @@ func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, err
 			end = start - limit + 1
 		}
 	}
+
 	if end < 0 {
 		end = 0
 	}
 	if end >= len(db.keys) {
 		end = len(db.keys) - 1
 	}
-	// resulting array
-	arr := make([][]byte, 0, 0)
+
 	if start < 0 || start >= len(db.keys) {
 		return arr, nil
 	}
+	//fmt.Println(1)
 	if asc {
 		for i := start; i <= end; i++ {
 			arr = append(arr, db.keys[i])
