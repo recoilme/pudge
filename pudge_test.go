@@ -16,7 +16,7 @@ const (
 func nrandbin(n int) [][]byte {
 	i := make([][]byte, n)
 	for ind := range i {
-		bin, _ := keyToBinary(rand.Int())
+		bin, _ := KeyToBinary(rand.Int())
 		i[ind] = bin
 	}
 	return i
@@ -208,7 +208,7 @@ func TestKeys(t *testing.T) {
 		s += string(r)
 	}
 	if s != "" {
-		t.Error("resnoteq", s)
+		t.Error("resnoteq ", s)
 	}
 
 	//by prefix
