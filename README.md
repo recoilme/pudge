@@ -16,6 +16,8 @@ It presents the following:
 * Very short and simple codebase
 * Well tested, used in production
 
+![pudge](https://avatars3.githubusercontent.com/u/417177?s=460&v=4)
+
 **Usage**
 
 
