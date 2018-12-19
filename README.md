@@ -1,5 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/recoilme/pudge)](https://goreportcard.com/report/github.com/recoilme/pudge)
 [![Documentation](https://godoc.org/github.com/recoilme/pudge?status.svg)](https://godoc.org/github.com/recoilme/pudge)
+[![Build Status](https://travis-ci.org/recoilme/pudge.svg?branch=master)](https://travis-ci.org/recoilme/pudge)
 
 **Description**
 
@@ -9,7 +10,7 @@ It presents the following:
 * Supporting very efficient lookup, insertions and deletions
 * Performance is comparable to hash tables
 * Ability to get the data in sorted order, which enables additional operations like range scan
-* Select with limit/offset/from key, with ordering
+* Select with limit/offset/from key, with ordering or by prefix
 * Safe for use in goroutines
 * Space efficient
 * Very short and simple codebase
