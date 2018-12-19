@@ -40,11 +40,11 @@ func Open(f string, cfg *Config) (*Db, error) {
 func (db *Db) Set(key, value interface{}) error {
 	db.Lock()
 	defer db.Unlock()
-	k, err := keyToBinary(key)
+	k, err := KeyToBinary(key)
 	if err != nil {
 		return err
 	}
-	v, err := valToBinary(value)
+	v, err := ValToBinary(value)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (db *Db) Set(key, value interface{}) error {
 func (db *Db) Get(key, value interface{}) error {
 	db.RLock()
 	defer db.RUnlock()
-	k, err := keyToBinary(key)
+	k, err := KeyToBinary(key)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func DeleteFile(file string) error {
 func (db *Db) Has(key interface{}) (bool, error) {
 	db.RLock()
 	defer db.RUnlock()
-	k, err := keyToBinary(key)
+	k, err := KeyToBinary(key)
 	if err != nil {
 		return false, err
 	}
@@ -231,10 +231,10 @@ func (db *Db) FileSize() (int64, error) {
 }
 
 // Count returns the number of items in the Db.
-func (db *Db) Count() int {
+func (db *Db) Count() (int, error) {
 	db.RLock()
 	defer db.RUnlock()
-	return len(db.keys)
+	return len(db.keys), nil
 }
 
 // Delete remove key
@@ -242,7 +242,7 @@ func (db *Db) Count() int {
 func (db *Db) Delete(key interface{}) error {
 	db.Lock()
 	defer db.Unlock()
-	k, err := keyToBinary(key)
+	k, err := KeyToBinary(key)
 	if err != nil {
 		return err
 	}
@@ -303,16 +303,17 @@ func (db *Db) KeysByPrefix(prefix []byte, limit, offset int, asc bool) ([][]byte
 // If from not nil - return keys after from (from not included)
 func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, error) {
 	// resulting array
+	//log.Println("pudge", from, from == nil)
 	arr := make([][]byte, 0, 0)
 	excludeFrom := 0
 	if from != nil {
 		excludeFrom = 1
 
-		k, err := keyToBinary(from)
+		k, err := KeyToBinary(from)
 		if err != nil {
 			return arr, err
 		}
-		if bytes.Equal(k[len(k)-1:], []byte("*")) {
+		if len(k) > 1 && bytes.Equal(k[len(k)-1:], []byte("*")) {
 			prefix := make([]byte, len(k)-1)
 			copy(prefix, k)
 			return db.KeysByPrefix(prefix, limit, offset, asc)
@@ -323,7 +324,7 @@ func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, err
 
 	find, _ := db.findKey(from, asc)
 	start, end := checkInterval(find, limit, offset, excludeFrom, len(db.keys), asc)
-
+	//log.Println(from, find, start, end)
 	if start < 0 || start >= len(db.keys) {
 		return arr, nil
 	}
@@ -402,4 +403,33 @@ func Keys(f string, from interface{}, limit, offset int, asc bool) ([][]byte, er
 		return nil, err
 	}
 	return db.Keys(from, limit, offset, asc)
+}
+
+// Has return true if key exists.
+// Return error if any.
+func Has(f string, key interface{}) (bool, error) {
+	db, err := Open(f, nil)
+	if err != nil {
+		return false, err
+	}
+	return db.Has(key)
+}
+
+// Count returns the number of items in the Db.
+func Count(f string) (int, error) {
+	db, err := Open(f, nil)
+	if err != nil {
+		return -1, err
+	}
+	return db.Count()
+}
+
+// Close - sync & close files.
+// Return error if any.
+func Close(f string) error {
+	db, err := Open(f, nil)
+	if err != nil {
+		return err
+	}
+	return db.Close()
 }

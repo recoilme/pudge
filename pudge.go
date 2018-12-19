@@ -202,7 +202,8 @@ func (db *Db) found(b []byte, asc bool) int {
 	//})
 }
 
-func keyToBinary(v interface{}) ([]byte, error) {
+// KeyToBinary return key in bytes
+func KeyToBinary(v interface{}) ([]byte, error) {
 	var err error
 
 	switch v.(type) {
@@ -227,7 +228,8 @@ func keyToBinary(v interface{}) ([]byte, error) {
 	}
 }
 
-func valToBinary(v interface{}) ([]byte, error) {
+// ValToBinary return value in bytes
+func ValToBinary(v interface{}) ([]byte, error) {
 	var err error
 	switch v.(type) {
 	case []byte:
@@ -328,7 +330,7 @@ func (db *Db) findKey(key interface{}, asc bool) (int, error) {
 		}
 		return len(db.keys) - 1, ErrKeyNotFound
 	}
-	k, err := keyToBinary(key)
+	k, err := KeyToBinary(key)
 	if err != nil {
 		return -1, err
 	}
