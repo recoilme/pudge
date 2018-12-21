@@ -84,3 +84,42 @@ func ExampleOpen() {
 }
 
 ```
+
+
+**Benchmarks**
+
+
+[All tests here](https://github.com/recoilme/pogreb-bench)
+
+Some tests, MacBook Pro (Retina, 13-inch, Early 2015)
+=====================================================
+
+
+### Test 1
+Number of keys: 1000000
+Minimum key size: 16, maximum key size: 64
+Minimum value size: 128, maximum value size: 512
+Concurrency: 2
+
+
+|                       | pogreb  | goleveldb | bolt   | badgerdb | pudge  | slowpoke | pudge(mem) |
+|-----------------------|---------|-----------|--------|----------|--------|----------|------------|
+| 1M (Put+Get), seconds | 187     | 38        | 126    | 34       | 23     | 23       | 2          |
+| 1M Put, ops/sec       | 5336    | 34743     | 8054   | 33539    | 47298  | 46789    | 439581     |
+| 1M Get, ops/sec       | 1782423 | 98406     | 499871 | 220597   | 499172 | 445783   | 1652069    |
+| FileSize,Mb           | 568     | 357       | 552    | 487      | 358    | 358      | 358        |
+
+
+### Test 4
+Number of keys: 10000000
+Key size: 8
+Value size: 16
+Concurrency: 100
+
+
+|                       | goleveldb | badgerdb | pudge  |
+|-----------------------|-----------|----------|--------|
+| 10M (Put+Get), seconds| 165       | 120      | 243    |
+| 10M Put, ops/sec      | 122933    | 135709   | 43843  |
+| 10M Get, ops/sec      | 118722    | 214981   | 666067 |
+| FileSize,Mb           | 312       | 1370     | 381    |
