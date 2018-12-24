@@ -435,3 +435,32 @@ func Close(f string) error {
 	}
 	return db.Close()
 }
+
+// BackupAll - backup all opened Db
+// if dir not set it will be backup
+// delete old backup file before run
+// ignore all errors
+func BackupAll(dir string) (err error) {
+	if dir == "" {
+		dir = "backup"
+	}
+	dbs.Lock()
+	stores := dbs.dbs
+	dbs.Unlock()
+	//tmp := make(map[string]string)
+	for _, db := range stores {
+		backup := dir + "/" + db.name
+		DeleteFile(backup)
+		keys, err := db.Keys(nil, 0, 0, true)
+		if err == nil {
+			for _, k := range keys {
+				var b []byte
+				db.Get(k, &b)
+				Set(backup, k, b)
+			}
+		}
+		Close(backup)
+	}
+
+	return err
+}

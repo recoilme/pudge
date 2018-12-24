@@ -471,3 +471,24 @@ func BenchmarkLoad(b *testing.B) {
 	log.Println(rm.Count())
 	DeleteFile(f)
 }
+
+func TestBackup(t *testing.T) {
+	Set("test/1", 1, 2)
+	Set("test/4", "4", "4")
+	BackupAll("")
+	DeleteFile("test/1")
+	DeleteFile("test/4")
+	var v1 int
+	Get("backup/test/1", 1, &v1)
+	if v1 != 2 {
+		t.Error("not 2")
+	}
+	var v2 = ""
+	Get("backup/test/4", "4", &v2)
+	if v2 != "4" {
+		t.Error("not 4")
+	}
+	DeleteFile("backup/test/1")
+	DeleteFile("backup/test/4")
+	CloseAll()
+}
