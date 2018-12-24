@@ -263,14 +263,13 @@ func (db *Db) Delete(key interface{}) error {
 // if offset > 0 - skip offset records
 // If from not nil - return keys after from (from not included)
 func (db *Db) KeysByPrefix(prefix []byte, limit, offset int, asc bool) ([][]byte, error) {
+	//log.Println("KeysByPrefix")
 	db.RLock()
 	defer db.RUnlock()
 	// resulting array
 	arr := make([][]byte, 0, 0)
-
 	found := db.foundPref(prefix, asc)
-
-	if !startFrom(db.keys[found], prefix) {
+	if found >= len(db.keys) || !startFrom(db.keys[found], prefix) {
 		//not found
 		return arr, ErrKeyNotFound
 	}
