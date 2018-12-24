@@ -118,7 +118,6 @@ func (db *Db) Get(key, value interface{}) error {
 // Close - sync & close files.
 // Return error if any.
 func (db *Db) Close() error {
-	//fmt.Println("Close")
 	if db.cancelSyncer != nil {
 		db.cancelSyncer()
 	}
@@ -127,16 +126,19 @@ func (db *Db) Close() error {
 
 	if db.config.StoreMode == 2 {
 		db.sort()
-		keys := db.keys
+		keys := make([][]byte, len(db.keys))
+		copy(keys, db.keys)
+
 		db.config.StoreMode = 0
-		db.Unlock()
+		//db.Unlock()
 		for _, k := range keys {
 			if val, ok := db.vals[string(k)]; ok {
-				db.Set(k, val.Val)
+				writeKeyVal(db.fk, db.fv, k, val.Val, false, nil)
 			}
 		}
-		db.Lock()
+		//db.Lock()
 	}
+
 	err := db.fk.Sync()
 	if err != nil {
 		return err
