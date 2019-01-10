@@ -58,7 +58,7 @@ func main() {
 }
 
 
-//ExampleSelect (complex example)
+//ExampleSelect
 func ExampleSelect() {
 	cfg := pudge.DefaultConfig()
 	cfg.SyncInterval = 0 //disable every second fsync
@@ -110,11 +110,12 @@ pudge.Set("users", u.Id, u)
 ```
  - Pudge is stateless and save for use in goroutines. You don't need create/open files before use. Just write data to pudge, don't worry about state. [web server example](https://github.com/recoilme/pixel)
 
- - Pudge is parallel. Readers don't block readers, but a writer - do, but by stateless nature of pudge it's safe to use multiples files for storages. Illustration from slowpoke (based on pudge): 
- ![pudge is parallel](https://camo.githubusercontent.com/a1b406485fa8cd52a98d820de706e3fd255941e9/68747470733a2f2f686162726173746f726167652e6f72672f776562742f79702f6f6b2f63332f79706f6b63333377702d70316a63657771346132323164693168752e706e67)
+ - Pudge is parallel. Readers don't block readers, but a writer - do, but by stateless nature of pudge it's safe to use multiples files for storages.
+
+ ![Illustration from slowpoke (based on pudge)](https://camo.githubusercontent.com/a1b406485fa8cd52a98d820de706e3fd255941e9/68747470733a2f2f686162726173746f726167652e6f72672f776562742f79702f6f6b2f63332f79706f6b63333377702d70316a63657771346132323164693168752e706e67)
 
 
- - Default architecture: memcache + file storage. Pudge use in memory hashmap for keys, and write values data to files (no value data stored in memory). But you may use inmemory mode for values, with custom config:
+ - Default store system: like memcache + file storage. Pudge use in memory hashmap for keys, and write values to files (no value data stored in memory). But you may use inmemory mode for values, with custom config:
 ```golang
 cfg = pudge.DefaultConfig()
 cfg.StoreMode = 2
@@ -132,8 +133,7 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
 
  - Don't forget close all opened databases on shutdown/kill.
 ```golang
- 	// Wait for interrupt signal to gracefully shutdown the server with
-	// a timeout of 5 seconds.
+ 	// Wait for interrupt signal to gracefully shutdown the server 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt, os.Kill)
 	<-quit
@@ -149,7 +149,7 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
 // select keys from db where key>7 order by keys asc limit 2 offset 0
  ```
 
- - Pudge will work well on SSD or spined disks. Pudge doesn't eat memory or storage or your sandwich. No hidden compaction/rebalancing/resizing and so on tasks. No LSM Tree. No MMap. It's a very simple database with less than 1K LOC. It's good for [simple pet website](https://github.com/recoilme/tgram) or highload system 
+ - Pudge will work well on SSD or spined disks. Pudge doesn't eat memory or storage or your sandwich. No hidden compaction/rebalancing/resizing and so on tasks. No LSM Tree. No MMap. It's a very simple database with less than 1K LOC. It's good for [simple social network](https://github.com/recoilme/tgram) or highload system 
 
 
 ## Disadvantages
