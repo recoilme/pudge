@@ -167,7 +167,7 @@ pudge.BackupAll("backup")
 
 ## Motivation
 
-Some databases very well for writing. Some of the databases very well for reading. But [pudge is well balanced for both types of operations](https://github.com/recoilme/pogreb-bench). It has small cute api, and don't have hidden graveyards. It's just hashmap where values written in files. And you may use one database for in-memory/persistent storage in a stateless stressfree way
+Some databases very well for writing. Some of the databases very well for reading. But [pudge is well balanced for both types of operations](https://github.com/recoilme/pogreb-bench). It has small [cute api](https://godoc.org/github.com/recoilme/pudge), and don't have hidden graveyards. It's just hashmap where values written in files. And you may use one database for in-memory/persistent storage in a stateless stressfree way
 
 
 ## Benchmarks
