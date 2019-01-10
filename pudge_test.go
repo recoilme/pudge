@@ -172,7 +172,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	//from byte asc
-	resfromasc, err := db.Keys([]byte("10"), 2, 2, true)
+	resfromasc, _ := db.Keys([]byte("10"), 2, 2, true)
 	s = ""
 	for _, r := range resfromasc {
 		s += string(r)
@@ -182,7 +182,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	//from byte desc
-	resfromdesc, err := db.Keys([]byte("10"), 2, 2, false)
+	resfromdesc, _ := db.Keys([]byte("10"), 2, 2, false)
 	s = ""
 	for _, r := range resfromdesc {
 		s += string(r)
@@ -192,7 +192,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	//from byte desc
-	resnotfound, err := db.Keys([]byte("100"), 2, 2, false)
+	resnotfound, _ := db.Keys([]byte("100"), 2, 2, false)
 	s = ""
 	for _, r := range resnotfound {
 		s += string(r)
@@ -202,7 +202,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	//from byte not eq
-	resnoteq, err := db.Keys([]byte("33"), 2, 2, false)
+	resnoteq, _ := db.Keys([]byte("33"), 2, 2, false)
 	s = ""
 	for _, r := range resnoteq {
 		s += string(r)
@@ -212,7 +212,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	//by prefix
-	respref, err := db.Keys([]byte("2*"), 4, 0, false)
+	respref, _ := db.Keys([]byte("2*"), 4, 0, false)
 	s = ""
 	for _, r := range respref {
 		s += string(r)
@@ -222,7 +222,7 @@ func TestKeys(t *testing.T) {
 	}
 
 	//by prefix2
-	respref2, err := db.Keys([]byte("1*"), 2, 0, false)
+	respref2, _ := db.Keys([]byte("1*"), 2, 0, false)
 	s = ""
 	for _, r := range respref2 {
 		s += string(r)
