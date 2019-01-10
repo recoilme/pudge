@@ -122,9 +122,13 @@ db, err := pudge.Open(dbPrefix+"/"+group, cfg)
 ...
 db.Counter(key, val)
 ```
-In that case, all data stored in memory and  will be stored on disk only on Close. [example server for highload, with http api](https://github.com/recoilme/bandit-server)
+In that case, all data stored in memory and  will be stored on disk only on Close. 
 
- - You may use pudge as engine for creating databases. [example database](https://github.com/recoilme/slowpoke)
+[Example server for highload, with http api](https://github.com/recoilme/bandit-server)
+
+ - You may use pudge as engine for creating databases. 
+ 
+ [Example database](https://github.com/recoilme/slowpoke)
 
  - Don't forget close all opened databases on shutdown/kill.
 ```golang
@@ -139,7 +143,7 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
  [example recovery function for gin framework](https://github.com/recoilme/bandit-server/blob/02e6eb9f89913bd68952ec35f6c37fc203d71fc2/bandit-server.go#L89)
 
  - Pudge has primitive select/query engine.
- ```
+ ```golang
  // Select 2 keys, from 7 in ascending order
 	keys, _ := db.Keys(7, 2, 0, true)
 // select keys from db where key>7 order by keys asc limit 2 offset 0
@@ -151,8 +155,8 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
 ## Disadvantages
 
  - No transaction system. All operation isolated, but you don't may batching them with automatic rollback.
- - Keys function (select/query engine) may be slow Speed of query may vary from 10ms to 1sec per million keys. Pudge don't use BTree/Skiplist or Adaptive radix tree for store keys in ordered way on every insert. Ordering operation is "lazy" and run only if needed.
- - No fsync on every insert. Most of database fsync data by the timer too, but pudge don't have this ability because it's very slow and doesn't add stability
+ - [Keys](https://godoc.org/github.com/recoilme/pudge#Keys) function (select/query engine) may be slow. Speed of query may vary from 10ms to 1sec per million keys. Pudge don't use BTree/Skiplist or Adaptive radix tree for store keys in ordered way on every insert. Ordering operation is "lazy" and run only if needed.
+ - No fsync on every insert. Most of database fsync data by the timer too
  - Deleted data don't remove from physically (but upsert will try to reuse space). You may shrink database only with backup right now
 ```golang
 pudge.BackupAll("backup")
