@@ -149,7 +149,7 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
 // select keys from db where key>7 order by keys asc limit 2 offset 0
  ```
 
- - Pudge will work well on SSD or spined disks. Pudge doesn't eat memory or storage or your sandwich. No hidden compaction/rebalancing/resizing and so on tasks. No LSM Tree. No MMap. It's a very simple database with less than 1K LOC. It's good for [simple social network](https://github.com/recoilme/tgram) or highload system 
+ - Pudge will work well on SSD or spined disks. Pudge doesn't eat memory or storage or your sandwich. No hidden compaction/rebalancing/resizing and so on tasks. No LSM Tree. No MMap. It's a very simple database with less than 500 LOC. It's good for [simple social network](https://github.com/recoilme/tgram) or highload system 
 
 
 ## Disadvantages
