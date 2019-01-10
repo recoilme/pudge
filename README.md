@@ -2,7 +2,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/recoilme/pudge)](https://goreportcard.com/report/github.com/recoilme/pudge)
 [![Build Status](https://travis-ci.org/recoilme/pudge.svg?branch=master)](https://travis-ci.org/recoilme/pudge)
 
-**Description**
+## Description
 
 Package pudge is a fast and simple key/value store written using Go's standard library.
 
@@ -18,7 +18,7 @@ It presents the following:
 
 ![pudge](https://avatars3.githubusercontent.com/u/417177?s=460&v=4)
 
-**Usage**
+## Usage
 
 
 ```
@@ -79,7 +79,7 @@ func ExampleSelect() {
 
 ```
 
-**Cookbook**
+## Cookbook
 
  - Store data of any type. Pudge uses Gob encoder/decoder internally. No limits on keys/values size.
 
@@ -135,7 +135,7 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
  - Pudge will work well on SSD or spined disks. Pudge doesn't eat memory or storage or your sandwich. No hidden compaction/rebalancing/resizing and so on tasks. No LSM Tree. No MMap. It's a very simple database with less than 1K LOC. It's good for [simple pet website](https://github.com/recoilme/tgram) or highload system 
 
 
-**Disadvantages**
+## Disadvantages
 
  - No transaction system. All operation isolated, but you don't may batching them with automatic rollback.
  - Keys function (select/query engine) may be slow Speed of query may vary from 10ms to 1sec per million keys. Pudge don't use BTree/Skiplist or Adaptive radix tree for store keys in ordered way on every insert. Ordering operation is "lazy" and run only if needed.
@@ -148,12 +148,12 @@ pudge.BackupAll("backup")
  - Author of project don't work at Google or Facebook and his name not Howard Chu or Brad Fitzpatrick. But I'm open for issue or contributions.
 
 
-**Motivation**
+## Motivation
 
 Some databases very well for writing. Some of the databases very well for reading. But [pudge is well balanced for both types of operations](https://github.com/recoilme/pogreb-bench). It has small cute api, and don't have hidden graveyards. It's just hashmap where values written in files. And you may use one database for in-memory/persistent storage in a stateless stressfree way
 
 
-**Benchmarks**
+## Benchmarks
 
 [All tests here](https://github.com/recoilme/pogreb-bench)
 
