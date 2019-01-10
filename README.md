@@ -2,6 +2,18 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/recoilme/pudge)](https://goreportcard.com/report/github.com/recoilme/pudge)
 [![Build Status](https://travis-ci.org/recoilme/pudge.svg?branch=master)](https://travis-ci.org/recoilme/pudge)
 
+Table of Contents
+=================
+
+* [Description](#description)
+* [Usage](#usage)
+* [Cookbook](#cookbook)
+* [Disadvantages](#disadvantages)
+* [Motivation](#motivation)
+* [Benchmarks](#benchmarks)
+	* [Test 1](#test-1)
+	* [Test 4](#test-4)
+
 ## Description
 
 Package pudge is a fast and simple key/value store written using Go's standard library.
