@@ -33,7 +33,7 @@ It presents the following:
 ## Usage
 
 
-```
+```golang
 package main
 
 import (
@@ -43,16 +43,17 @@ import (
 )
 
 func main() {
-	// ExampleSet
-	pudge.Set("../test/test", "Hello", "World")
+	// Close all database on exit
 	defer pudge.CloseAll()
 
-	// ExampleGet (lazy open)
+	// Set (directories will be created)
+	pudge.Set("../test/test", "Hello", "World")
+
+	// Get (lazy open db if needed)
 	output := ""
 	pudge.Get("../test/test", "Hello", &output)
 	log.Println("Output:", output)
 
-  // ExampleSelect
 	ExampleSelect()
 }
 
@@ -95,7 +96,7 @@ func ExampleSelect() {
 
  - Store data of any type. Pudge uses Gob encoder/decoder internally. No limits on keys/values size.
 
-```
+```golang
 pudge.Set("strings", "Hello", "World")
 pudge.Set("numbers", 1, 42)
 
@@ -114,7 +115,7 @@ pudge.Set("users", u.Id, u)
 
 
  - Default architecture: memcache + file storage. Pudge use in memory hashmap for keys, and write values data to files (no value data stored in memory). But you may use inmemory mode for values, with custom config:
-```
+```golang
 cfg = pudge.DefaultConfig()
 cfg.StoreMode = 2
 db, err := pudge.Open(dbPrefix+"/"+group, cfg)
@@ -126,7 +127,7 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
  - You may use pudge as engine for creating databases. [example database](https://github.com/recoilme/slowpoke)
 
  - Don't forget close all opened databases on shutdown/kill.
- ```
+```golang
  	// Wait for interrupt signal to gracefully shutdown the server with
 	// a timeout of 5 seconds.
 	quit := make(chan os.Signal)
@@ -153,7 +154,7 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
  - Keys function (select/query engine) may be slow Speed of query may vary from 10ms to 1sec per million keys. Pudge don't use BTree/Skiplist or Adaptive radix tree for store keys in ordered way on every insert. Ordering operation is "lazy" and run only if needed.
  - No fsync on every insert. Most of database fsync data by the timer too, but pudge don't have this ability because it's very slow and doesn't add stability
  - Deleted data don't remove from physically (but upsert will try to reuse space). You may shrink database only with backup right now
-```
+```golang
 pudge.BackupAll("backup")
 ```
  - Keys automatically convert to binary and ordered with binary comparator. It's simple for use, but ordering will not work correctly for negative numbers for example
