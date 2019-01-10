@@ -4,7 +4,7 @@
 
 **Description**
 
-Package pudge is a simple key/value store written using Go's standard library only. Keys are stored in memory (with persistence), values stored on disk.
+Package pudge is a fast and simple key/value store written using Go's standard library.
 
 It presents the following:
 * Supporting very efficient lookup, insertions and deletions
@@ -31,28 +31,22 @@ import (
 )
 
 func main() {
-	ExampleSet()
-	ExampleGet()
-	ExampleOpen()
-}
-
-//ExampleSet (lazy open)
-func ExampleSet() {
+	// ExampleSet
 	pudge.Set("../test/test", "Hello", "World")
 	defer pudge.CloseAll()
-}
 
-//ExampleGet (lazy open)
-func ExampleGet() {
+	// ExampleGet (lazy open)
 	output := ""
 	pudge.Get("../test/test", "Hello", &output)
 	log.Println("Output:", output)
-	// Output: World
-	defer pudge.CloseAll()
+
+  // ExampleSelect
+	ExampleSelect()
 }
 
-//ExampleOpen (complex example)
-func ExampleOpen() {
+
+//ExampleSelect (complex example)
+func ExampleSelect() {
 	cfg := pudge.DefaultConfig()
 	cfg.SyncInterval = 0 //disable every second fsync
 	db, err := pudge.Open("../test/db", cfg)
@@ -85,14 +79,86 @@ func ExampleOpen() {
 
 ```
 
+**Cookbook**
+
+ - Store data of any type. Pudge uses Gob encoder/decoder internally. No limits on keys/values size.
+
+```
+pudge.Set("strings", "Hello", "World")
+pudge.Set("numbers", 1, 42)
+
+type User struct {
+	Id int
+	Name string
+}
+u := &User{Id: 1, Name: "name"}
+pudge.Set("users", u.Id, u)
+
+```
+ - Pudge is stateless and save for use in goroutines. You don't need create/open files before use. Just write data to pudge, don't worry about state. [web server example](https://github.com/recoilme/pixel)
+
+ - Pudge is parallel. Readers don't block readers, but a writer - do, but by stateless nature of pudge it's safe to use multiples files for storages. Illustration from slowpoke (based on pudge): 
+ ![pudge is parallel](https://camo.githubusercontent.com/a1b406485fa8cd52a98d820de706e3fd255941e9/68747470733a2f2f686162726173746f726167652e6f72672f776562742f79702f6f6b2f63332f79706f6b63333377702d70316a63657771346132323164693168752e706e67)
+
+
+ - Default architecture: memcache + file storage. Pudge use in memory hashmap for keys, and write values data to files (no value data stored in memory). But you may use inmemory mode for values, with custom config:
+```
+cfg = pudge.DefaultConfig()
+cfg.StoreMode = 2
+db, err := pudge.Open(dbPrefix+"/"+group, cfg)
+...
+db.Counter(key, val)
+```
+In that case, all data stored in memory and  will be stored on disk only on Close. [example server for highload, with http api](https://github.com/recoilme/bandit-server)
+
+ - You may use pudge as engine for creating databases. [example database](https://github.com/recoilme/slowpoke)
+
+ - Don't forget close all opened databases on shutdown/kill.
+ ```
+ 	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 5 seconds.
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt, os.Kill)
+	<-quit
+	log.Println("Shutdown Server ...")
+	fmt.Println("Shutdown Server ...")
+ ```
+ [example recovery function for gin framework](https://github.com/recoilme/bandit-server/blob/02e6eb9f89913bd68952ec35f6c37fc203d71fc2/bandit-server.go#L89)
+
+ - Pudge has primitive select/query engine.
+ ```
+ // Select 2 keys, from 7 in ascending order
+	keys, _ := db.Keys(7, 2, 0, true)
+// select keys from db where key>7 order by keys asc limit 2 offset 0
+ ```
+
+ - Pudge will work well on SSD or spined disks. Pudge doesn't eat memory or storage or your sandwich. No hidden compaction/rebalancing/resizing and so on tasks. No LSM Tree. No MMap. It's a very simple database with less than 1K LOC. It's good for [simple pet website](https://github.com/recoilme/tgram) or highload system 
+
+
+**Disadvantages**
+
+ - No transaction system. All operation isolated, but you don't may batching them with automatic rollback.
+ - Keys function (select/query engine) may be slow Speed of query may vary from 10ms to 1sec per million keys. Pudge don't use BTree/Skiplist or Adaptive radix tree for store keys in ordered way on every insert. Ordering operation is "lazy" and run only if needed.
+ - No fsync on every insert. Most of database fsync data by the timer too, but pudge don't have this ability because it's very slow and doesn't add stability
+ - Deleted data don't remove from physically (but upsert will try to reuse space). You may shrink database only with backup right now
+```
+pudge.BackupAll("backup")
+```
+ - Keys automatically convert to binary and ordered with binary comparator. It's simple for use, but ordering will not work correctly for negative numbers for example
+ - Author of project don't work at Google or Facebook and his name not Howard Chu or Brad Fitzpatrick. But I'm open for issue or contributions.
+
+
+**Motivation**
+
+Some databases very well for writing. Some of the databases very well for reading. But [pudge is well balanced for both types of operations](https://github.com/recoilme/pogreb-bench). It has small cute api, and don't have hidden graveyards. It's just hashmap where values written in files. And you may use one database for in-memory/persistent storage in a stateless stressfree way
+
 
 **Benchmarks**
 
-
 [All tests here](https://github.com/recoilme/pogreb-bench)
 
-Some tests, MacBook Pro (Retina, 13-inch, Early 2015)
-=====================================================
+***Some tests, MacBook Pro (Retina, 13-inch, Early 2015)***
+
 
 
 ### Test 1
