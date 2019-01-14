@@ -1,6 +1,7 @@
 [![Documentation](https://godoc.org/github.com/recoilme/pudge?status.svg)](https://godoc.org/github.com/recoilme/pudge)
 [![Go Report Card](https://goreportcard.com/badge/github.com/recoilme/pudge)](https://goreportcard.com/report/github.com/recoilme/pudge)
 [![Build Status](https://travis-ci.org/recoilme/pudge.svg?branch=master)](https://travis-ci.org/recoilme/pudge)
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go)
 
 Table of Contents
 =================
@@ -138,7 +139,9 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
 	signal.Notify(quit, os.Interrupt, os.Kill)
 	<-quit
 	log.Println("Shutdown Server ...")
-	fmt.Println("Shutdown Server ...")
+	if err := pudge.CloseAll(); err != nil {
+		log.Println("Pudge Shutdown err:", err)
+	}
  ```
  [example recovery function for gin framework](https://github.com/recoilme/bandit-server/blob/02e6eb9f89913bd68952ec35f6c37fc203d71fc2/bandit-server.go#L89)
 
