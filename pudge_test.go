@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 )
 
 const (
@@ -491,4 +492,16 @@ func TestBackup(t *testing.T) {
 	DeleteFile("backup/test/1")
 	DeleteFile("backup/test/4")
 	CloseAll()
+}
+
+func TestMultipleOpen(t *testing.T) {
+	for i := 1; i < 100000; i++ {
+		Set("test/m", i, i)
+	}
+	Close("test/m")
+	for i := 1; i < 100000; i++ {
+		go Open("test/m", nil)
+	}
+	time.Sleep(1 * time.Millisecond)
+	DeleteFile("test/m")
 }
