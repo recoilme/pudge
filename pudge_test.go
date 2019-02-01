@@ -499,7 +499,7 @@ func TestMultipleOpen(t *testing.T) {
 		Set("test/m", i, i)
 	}
 	Close("test/m")
-	for i := 1; i < 100000; i++ {
+	for i := 1; i < 100; i++ {
 		go Open("test/m", nil)
 	}
 	time.Sleep(1 * time.Millisecond)
