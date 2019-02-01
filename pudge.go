@@ -47,7 +47,7 @@ type Cmd struct {
 // Config fo db
 // Default FileMode = 0666
 // Default DirMode = 0777
-// Default SyncInterval = 1 sec, 0 - disable sync (os will sync, typically 30 sec or so)
+// Default SyncInterval = 0 sec, 0 - disable sync (os will sync, typically 30 sec or so)
 type Config struct {
 	FileMode     int // 0666
 	DirMode      int // 0777
