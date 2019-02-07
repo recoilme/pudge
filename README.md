@@ -109,14 +109,14 @@ u := &User{Id: 1, Name: "name"}
 pudge.Set("users", u.Id, u)
 
 ```
- - Pudge is stateless and save for use in goroutines. You don't need create/open files before use. Just write data to pudge, don't worry about state. [web server example](https://github.com/recoilme/pixel)
+ - Pudge is stateless and safe for use in goroutines. You don't need to create/open files before use. Just write data to pudge, don't worry about state. [web server example](https://github.com/recoilme/pixel)
 
- - Pudge is parallel. Readers don't block readers, but a writer - do, but by stateless nature of pudge it's safe to use multiples files for storages.
+ - Pudge is parallel. Readers don't block readers, but a writer - does, but by the stateless nature of pudge it's safe to use multiples files for storages.
 
  ![Illustration from slowpoke (based on pudge)](https://camo.githubusercontent.com/a1b406485fa8cd52a98d820de706e3fd255941e9/68747470733a2f2f686162726173746f726167652e6f72672f776562742f79702f6f6b2f63332f79706f6b63333377702d70316a63657771346132323164693168752e706e67)
 
 
- - Default store system: like memcache + file storage. Pudge use in memory hashmap for keys, and write values to files (no value data stored in memory). But you may use inmemory mode for values, with custom config:
+ - Default store system: like memcache + file storage. Pudge uses in-memory hashmap for keys, and writes values to files (no value data stored in memory). But you may use inmemory mode for values, with custom config:
 ```golang
 cfg = pudge.DefaultConfig()
 cfg.StoreMode = 2
@@ -124,15 +124,15 @@ db, err := pudge.Open(dbPrefix+"/"+group, cfg)
 ...
 db.Counter(key, val)
 ```
-In that case, all data stored in memory and  will be stored on disk only on Close. 
+In that case, all data is stored in memory and will be stored on disk only on Close. 
 
 [Example server for highload, with http api](https://github.com/recoilme/bandit-server)
 
- - You may use pudge as engine for creating databases. 
+ - You may use pudge as an engine for creating databases. 
  
  [Example database](https://github.com/recoilme/slowpoke)
 
- - Don't forget close all opened databases on shutdown/kill.
+ - Don't forget to close all opened databases on shutdown/kill.
 ```golang
  	// Wait for interrupt signal to gracefully shutdown the server 
 	quit := make(chan os.Signal)
@@ -145,7 +145,7 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
  ```
  [example recovery function for gin framework](https://github.com/recoilme/bandit-server/blob/02e6eb9f89913bd68952ec35f6c37fc203d71fc2/bandit-server.go#L89)
 
- - Pudge has primitive select/query engine.
+ - Pudge has a primitive select/query engine.
  ```golang
  // Select 2 keys, from 7 in ascending order
 	keys, _ := db.Keys(7, 2, 0, true)
@@ -157,7 +157,7 @@ In that case, all data stored in memory and  will be stored on disk only on Clos
 
 ## Disadvantages
 
- - No transaction system. All operation isolated, but you don't may batching them with automatic rollback.
+ - No transaction system. All operations are isolated, but you don't may batching them with automatic rollback.
  - [Keys](https://godoc.org/github.com/recoilme/pudge#Keys) function (select/query engine) may be slow. Speed of query may vary from 10ms to 1sec per million keys. Pudge don't use BTree/Skiplist or Adaptive radix tree for store keys in ordered way on every insert. Ordering operation is "lazy" and run only if needed.
  - No fsync on every insert. Most of database fsync data by the timer too
  - Deleted data don't remove from physically (but upsert will try to reuse space). You may shrink database only with backup right now
