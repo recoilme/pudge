@@ -374,8 +374,7 @@ func TestAsync(t *testing.T) {
 }
 
 func TestStoreMode(t *testing.T) {
-	cfg := DefaultConfig()
-	cfg.StoreMode = 2
+	cfg := &Config{StoreMode: 2}
 	db, err := Open("test/sm", cfg)
 	if err != nil {
 		t.Error(err)
