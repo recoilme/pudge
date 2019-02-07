@@ -47,8 +47,8 @@ func ExampleDeleteFile() {
 
 //ExampleOpen complex example
 func ExampleOpen() {
-	cfg := pudge.DefaultConfig()
-	cfg.SyncInterval = 0 //disable every second fsync
+	cfg := &pudge.Config{
+		SyncInterval: 0} //disable every second fsync
 	db, err := pudge.Open("../test/db", cfg)
 	if err != nil {
 		log.Panic(err)

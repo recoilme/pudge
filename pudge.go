@@ -72,6 +72,14 @@ func newDb(f string, cfg *Config) (*Db, error) {
 	db.vals = make(map[string]*Cmd)
 	db.config = cfg
 
+	// Apply default values
+	if cfg.FileMode == 0 {
+		cfg.FileMode = DefaultConfig.FileMode
+	}
+	if cfg.DirMode == 0 {
+		cfg.DirMode = DefaultConfig.DirMode
+	}
+
 	_, err = os.Stat(f)
 	if err != nil {
 		// file not exists - create dirs if any

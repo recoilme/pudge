@@ -6,8 +6,8 @@ import (
 )
 
 func ExampleOpen() {
-	cfg := DefaultConfig()
-	cfg.SyncInterval = 0 //disable every second fsync
+	cfg := &Config{
+		SyncInterval: 0} //disable every second fsync
 	db, err := Open("test/db", cfg)
 	if err != nil {
 		log.Panic(err)
