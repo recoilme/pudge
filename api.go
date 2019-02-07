@@ -7,7 +7,11 @@ import (
 )
 
 // DefaultConfig is default config
-var DefaultConfig =&Config{FileMode: 0666, DirMode: 0777, SyncInterval: 0, StoreMode: 0}
+var DefaultConfig = &Config{
+	FileMode:     0666,
+	DirMode:      0777,
+	SyncInterval: 0,
+	StoreMode:    0}
 
 // Open return db object if it opened.
 // Create new db if not exist.
