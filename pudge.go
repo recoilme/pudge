@@ -33,7 +33,7 @@ type Db struct {
 	keys         [][]byte
 	vals         map[string]*Cmd
 	cancelSyncer context.CancelFunc
-	config       *Config
+	storemode    int
 }
 
 // Cmd represent keys and vals addresses
@@ -60,7 +60,7 @@ func init() {
 }
 
 func newDb(f string, cfg *Config) (*Db, error) {
-	//fmt.Println("newdb2:", f)
+	//fmt.Println("newdb2:", f, cfg.StoreMode)
 	var err error
 	// create
 	db := new(Db)
@@ -70,7 +70,8 @@ func newDb(f string, cfg *Config) (*Db, error) {
 	db.name = f
 	db.keys = make([][]byte, 0)
 	db.vals = make(map[string]*Cmd)
-	db.config = cfg
+	//db.config = cfg
+	db.storemode = cfg.StoreMode
 
 	// Apply default values
 	if cfg.FileMode == 0 {
@@ -124,7 +125,7 @@ func newDb(f string, cfg *Config) (*Db, error) {
 			Size:    size,
 			KeySeek: readSeek,
 		}
-		if db.config.StoreMode == 2 {
+		if db.storemode == 2 {
 			cmd.Val = make([]byte, size)
 			db.fv.ReadAt(cmd.Val, int64(seek))
 		}

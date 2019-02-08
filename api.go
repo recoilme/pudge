@@ -31,6 +31,7 @@ func Open(f string, cfg *Config) (*Db, error) {
 	dbs.RUnlock()
 	dbs.Lock()
 	db, err := newDb(f, cfg)
+	//log.Println("n", db.name, db.config.StoreMode)
 	if err == nil {
 		dbs.dbs[f] = db
 	}
@@ -53,7 +54,7 @@ func (db *Db) Set(key, value interface{}) error {
 	//log.Println("Set:", k, v)
 	oldCmd, exists := db.vals[string(k)]
 	//fmt.Println("StoreMode", db.config.StoreMode)
-	if db.config.StoreMode == 2 {
+	if db.storemode == 2 {
 		cmd := &Cmd{}
 		cmd.Size = uint32(len(v))
 		cmd.Val = make([]byte, len(v))
@@ -86,7 +87,7 @@ func (db *Db) Get(key, value interface{}) error {
 		switch value.(type) {
 		case *[]byte:
 			b := make([]byte, val.Size)
-			if db.config.StoreMode == 2 {
+			if db.storemode == 2 {
 				copy(b, val.Val)
 			} else {
 				_, err := db.fv.ReadAt(b, int64(val.Seek))
@@ -100,7 +101,7 @@ func (db *Db) Get(key, value interface{}) error {
 
 			buf := new(bytes.Buffer)
 			b := make([]byte, val.Size)
-			if db.config.StoreMode == 2 {
+			if db.storemode == 2 {
 				//fmt.Println(val)
 				copy(b, val.Val)
 			} else {
@@ -126,12 +127,14 @@ func (db *Db) Close() error {
 	db.Lock()
 	defer db.Unlock()
 
-	if db.config.StoreMode == 2 {
+	if db.storemode == 2 {
+
 		db.sort()
 		keys := make([][]byte, len(db.keys))
+
 		copy(keys, db.keys)
 
-		db.config.StoreMode = 0
+		db.storemode = 0
 		//db.Unlock()
 		for _, k := range keys {
 			if val, ok := db.vals[string(k)]; ok {

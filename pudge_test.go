@@ -504,3 +504,29 @@ func TestMultipleOpen(t *testing.T) {
 	time.Sleep(1 * time.Millisecond)
 	DeleteFile("test/m")
 }
+
+func TestInMemory(t *testing.T) {
+	DefaultConfig.StoreMode = 2
+
+	for i := 0; i < 10; i++ {
+		fileName := fmt.Sprintf("test/inmemory%d", i)
+		err := Set(fileName, i, i)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+
+	err := CloseAll()
+	if err != nil {
+		t.Error(err)
+	}
+	for i := 0; i < 10; i++ {
+		fileName := fmt.Sprintf("test/inmemory%d", i)
+		c, e := Count(fileName)
+		if c == 0 || e != nil {
+			t.Error("no persist")
+			break
+		}
+		DeleteFile(fileName)
+	}
+}
