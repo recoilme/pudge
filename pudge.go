@@ -48,11 +48,12 @@ type Cmd struct {
 // Default FileMode = 0666
 // Default DirMode = 0777
 // Default SyncInterval = 0 sec, 0 - disable sync (os will sync, typically 30 sec or so)
+// If StroreMode==2 && file == "" - pure inmemory mode
 type Config struct {
 	FileMode     int // 0666
 	DirMode      int // 0777
 	SyncInterval int // in seconds
-	StoreMode    int // 0 - file first, 2 - memory first(with persist on close)
+	StoreMode    int // 0 - file first, 2 - memory first(with persist on close), 2 - with empty file - memory without persist
 }
 
 func init() {
@@ -70,7 +71,6 @@ func newDb(f string, cfg *Config) (*Db, error) {
 	db.name = f
 	db.keys = make([][]byte, 0)
 	db.vals = make(map[string]*Cmd)
-	//db.config = cfg
 	db.storemode = cfg.StoreMode
 
 	// Apply default values
@@ -80,7 +80,9 @@ func newDb(f string, cfg *Config) (*Db, error) {
 	if cfg.DirMode == 0 {
 		cfg.DirMode = DefaultConfig.DirMode
 	}
-
+	if db.storemode == 2 && db.name == "" {
+		return db, nil
+	}
 	_, err = os.Stat(f)
 	if err != nil {
 		// file not exists - create dirs if any

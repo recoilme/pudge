@@ -530,3 +530,47 @@ func TestInMemory(t *testing.T) {
 		DeleteFile(fileName)
 	}
 }
+
+func TestInMemoryWithoutPersist(t *testing.T) {
+	DefaultConfig.StoreMode = 2
+
+	for i := 0; i < 10000; i++ {
+		err := Set("", i, i)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	j := 0
+	Get("", 8, &j)
+	if j != 8 {
+		t.Error("j must be 8", j)
+	}
+	cnt, e := Count("")
+	if cnt != 10000 {
+		t.Error("count must be 10000", cnt, e)
+	}
+	for i := 0; i < 10; i++ {
+		c, e := Count("")
+		if c != 10000 || e != nil {
+			t.Error("no persist", c, e)
+			break
+		}
+	}
+	noerr := DeleteFile("")
+	if noerr != nil {
+		t.Error("Delete empty file", noerr)
+	}
+	noerr = Close("")
+	if noerr != nil {
+		t.Error("Close empty file", noerr)
+	}
+	jj := 0
+	notpresent := Get("", 8, &jj)
+	if jj == 8 {
+		t.Error("jj  must be 0", j)
+	}
+	if notpresent != ErrKeyNotFound {
+		t.Error("Must be Error: key not found error", notpresent)
+	}
+
+}

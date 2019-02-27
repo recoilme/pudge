@@ -12,6 +12,7 @@ func main() {
 	ExampleDelete()
 	ExampleDeleteFile()
 	ExampleOpen()
+	ExampleInMemoryWithoutPersist()
 }
 
 //ExampleSet lazy
@@ -75,4 +76,34 @@ func ExampleOpen() {
 	}
 	// Output: {8 8}
 	// Output: {9 9}
+}
+
+// ExampleInMemoryWithoutPersist -if file is empty in storemode 2 - without persist
+func ExampleInMemoryWithoutPersist() {
+	cfg := &pudge.Config{StoreMode: 2} //in memory
+	db, err := pudge.Open("", cfg)     // if file is empty in storemode 2 - without persist
+	if err != nil {
+		log.Panic(err)
+	}
+	defer db.Close() //remove from memory
+	type Point struct {
+		X int
+		Y int
+	}
+	for i := 100; i >= 0; i-- {
+		p := &Point{X: i, Y: i}
+		db.Set(i, p)
+	}
+	var point Point
+	db.Get(89, &point)
+	log.Println(point)
+	// Output: {89 89}
+	keys, _ := db.Keys(77, 2, 0, true)
+	for _, key := range keys {
+		var p Point
+		db.Get(key, &p)
+		log.Println(p)
+	}
+	// Output: {78 78}
+	// Output: {79 79}
 }

@@ -127,39 +127,41 @@ func (db *Db) Close() error {
 	db.Lock()
 	defer db.Unlock()
 
-	if db.storemode == 2 {
-
+	if db.storemode == 2 && db.name != "" {
 		db.sort()
 		keys := make([][]byte, len(db.keys))
 
 		copy(keys, db.keys)
 
 		db.storemode = 0
-		//db.Unlock()
 		for _, k := range keys {
 			if val, ok := db.vals[string(k)]; ok {
 				writeKeyVal(db.fk, db.fv, k, val.Val, false, nil)
 			}
 		}
-		//db.Lock()
+	}
+	if db.fk != nil {
+		err := db.fk.Sync()
+		if err != nil {
+			return err
+		}
+		err = db.fk.Close()
+		if err != nil {
+			return err
+		}
+	}
+	if db.fv != nil {
+		err := db.fv.Sync()
+		if err != nil {
+			return err
+		}
+
+		err = db.fv.Close()
+		if err != nil {
+			return err
+		}
 	}
 
-	err := db.fk.Sync()
-	if err != nil {
-		return err
-	}
-	err = db.fv.Sync()
-	if err != nil {
-		return err
-	}
-	err = db.fk.Close()
-	if err != nil {
-		return err
-	}
-	err = db.fv.Close()
-	if err != nil {
-		return err
-	}
 	dbs.Lock()
 	delete(dbs.dbs, db.name)
 	dbs.Unlock()
@@ -188,6 +190,9 @@ func (db *Db) DeleteFile() error {
 
 // DeleteFile close db and delete file
 func DeleteFile(file string) error {
+	if file == "" {
+		return nil
+	}
 	dbs.Lock()
 	db, ok := dbs.dbs[file]
 	if ok {
