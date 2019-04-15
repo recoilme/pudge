@@ -574,3 +574,19 @@ func TestInMemoryWithoutPersist(t *testing.T) {
 	}
 
 }
+
+func Test42(t *testing.T) {
+	DefaultConfig.StoreMode = 0
+	f := "test/int64"
+	for i := 1; i < 64; i++ {
+		Set(f, int64(i), int64(i))
+	}
+	keys, err := Keys(f, int64(42), 100, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(keys) != 22 {
+		t.Error("not 21", len(keys))
+	}
+	DeleteFile(f)
+}

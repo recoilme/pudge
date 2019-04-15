@@ -3,6 +3,7 @@ package pudge
 import (
 	"bytes"
 	"encoding/gob"
+	"log"
 	"os"
 )
 
@@ -321,21 +322,29 @@ func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, err
 		excludeFrom = 1
 
 		k, err := KeyToBinary(from)
+		log.Println(bytes.Equal(k[len(k)-1:], []byte("*")))
 		if err != nil {
 			return arr, err
 		}
 		if len(k) > 1 && bytes.Equal(k[len(k)-1:], []byte("*")) {
-			prefix := make([]byte, len(k)-1)
-			copy(prefix, k)
-			return db.KeysByPrefix(prefix, limit, offset, asc)
+			byteOrStr := false
+			switch from.(type) {
+			case []byte:
+				byteOrStr = true
+			case string:
+				byteOrStr = true
+			}
+			if byteOrStr {
+				prefix := make([]byte, len(k)-1)
+				copy(prefix, k)
+				return db.KeysByPrefix(prefix, limit, offset, asc)
+			}
 		}
 	}
 	db.RLock()
 	defer db.RUnlock()
-
 	find, _ := db.findKey(from, asc)
 	start, end := checkInterval(find, limit, offset, excludeFrom, len(db.keys), asc)
-	//log.Println(from, find, start, end)
 	if start < 0 || start >= len(db.keys) {
 		return arr, nil
 	}
