@@ -363,15 +363,17 @@ func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, err
 
 // Counter return int64 incremented on incr
 func (db *Db) Counter(key interface{}, incr int) (int64, error) {
+	mutex.Lock()
 	var counter int64
 	err := db.Get(key, &counter)
 	if err != nil && err != ErrKeyNotFound {
 		return -1, err
 	}
-	mutex.Lock()
+	//mutex.Lock()
 	counter = counter + int64(incr)
-	mutex.Unlock()
+	//mutex.Unlock()
 	err = db.Set(key, counter)
+	mutex.Unlock()
 	return counter, err
 }
 
