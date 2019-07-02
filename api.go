@@ -3,7 +3,6 @@ package pudge
 import (
 	"bytes"
 	"encoding/gob"
-	"log"
 	"os"
 )
 
@@ -322,7 +321,7 @@ func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, err
 		excludeFrom = 1
 
 		k, err := KeyToBinary(from)
-		log.Println(bytes.Equal(k[len(k)-1:], []byte("*")))
+		//log.Println(bytes.Equal(k[len(k)-1:], []byte("*")))
 		if err != nil {
 			return arr, err
 		}
