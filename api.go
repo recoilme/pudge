@@ -386,7 +386,6 @@ func Set(f string, key, value interface{}) error {
 }
 
 // Sets store vals and keys
-// Sync will called only at end of insertion
 // Use it for mass insertion
 // every pair must contain key and value
 func Sets(file string, pairs []interface{}) (err error) {
