@@ -385,6 +385,30 @@ func Set(f string, key, value interface{}) error {
 	return db.Set(key, value)
 }
 
+// Sets store vals and keys
+// Sync will called only at end of insertion
+// Use it for mass insertion
+// every pair must contain key and value
+func Sets(file string, pairs []interface{}) (err error) {
+	db, err := Open(file, nil)
+	if err != nil {
+		return err
+	}
+	for i := range pairs {
+		if i%2 != 0 {
+			// on odd - append val and store key
+			if pairs[i] == nil || pairs[i-1] == nil {
+				break
+			}
+			err = db.Set(pairs[i-1], pairs[i])
+			if err != nil {
+				break
+			}
+		}
+	}
+	return err
+}
+
 // Get return value by key with opening if needed
 // Return error if any.
 func Get(f string, key, value interface{}) error {
@@ -393,6 +417,32 @@ func Get(f string, key, value interface{}) error {
 		return err
 	}
 	return db.Get(key, value)
+}
+
+// Gets return key/value pairs in random order
+// result contains key and value
+// Gets not return error if key not found
+// If no keys found return empty result
+func Gets(file string, keys []interface{}) (result [][]byte) {
+	db, err := Open(file, nil)
+	if err != nil {
+		return nil
+	}
+	for _, key := range keys {
+		var v []byte
+		err := db.Get(key, &v)
+		if err == nil {
+			k, err := KeyToBinary(key)
+			if err == nil {
+				val, err := ValToBinary(v)
+				if err == nil {
+					result = append(result, k)
+					result = append(result, val)
+				}
+			}
+		}
+	}
+	return result
 }
 
 // Counter return int64 incremented on incr with lazy open

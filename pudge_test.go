@@ -585,8 +585,59 @@ func Test42(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(keys) != 22 {
+	if len(keys) != 21 {
 		t.Error("not 21", len(keys))
+	}
+	DeleteFile(f)
+}
+
+func TestSetsGets(t *testing.T) {
+	f := "test/setsgets"
+	DeleteFile(f)
+	var pairs []interface{}
+
+	for i := 1; i < 64; i++ {
+		pairs = append(pairs, i)
+		pairs = append(pairs, i+1)
+	}
+	err := Sets(f, pairs)
+	if err != nil {
+		t.Error("Sets err", err)
+	}
+	var v int
+	err = Get(f, 63, &v)
+	if err != nil || v != 64 {
+		t.Error("Sets err", err, v)
+	}
+	//Sets
+	var pairsBin []interface{}
+	for i := 0; i < 100; i++ {
+		k := []byte(fmt.Sprintf("%04d", i))
+		pairsBin = append(pairsBin, k)
+		pairsBin = append(pairsBin, k)
+	}
+	err = Sets(f, pairsBin)
+	if err != nil {
+		t.Error("Sets err", err)
+	}
+	var s []byte
+	err = Get(f, []byte("0063"), &s)
+	if err != nil || string(s) != "0063" {
+		t.Error("Sets err", err, s)
+	}
+	var keys []interface{}
+	for i := 2; i < 4; i++ {
+		k := []byte(fmt.Sprintf("%04d", i))
+		keys = append(keys, k)
+	}
+	err = Get(f, []byte("0068"), &s)
+	if err != nil {
+		t.Error("Sets err", err)
+	}
+
+	result := Gets(f, keys)
+	if len(result) != 4 {
+		t.Error("Sets err not 4")
 	}
 	DeleteFile(f)
 }
