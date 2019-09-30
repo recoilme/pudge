@@ -225,11 +225,17 @@ func KeyToBinary(v interface{}) ([]byte, error) {
 		err = binary.Write(buf, binary.BigEndian, v)
 		return buf.Bytes(), err
 	case int:
-		//binary.BigEndian.Uint32(buf.Next(4))
-		buf := new(bytes.Buffer)
-		buf.Grow(8)
-		err = binary.Write(buf, binary.BigEndian, int64(v.(int)))
-		return buf.Bytes(), err
+		val := uint64(v.(int))
+		p := make([]byte, 8)
+		p[0] = byte(val >> 56)
+		p[1] = byte(val >> 48)
+		p[2] = byte(val >> 40)
+		p[3] = byte(val >> 32)
+		p[4] = byte(val >> 24)
+		p[5] = byte(val >> 16)
+		p[6] = byte(val >> 8)
+		p[7] = byte(val)
+		return p, err
 	case string:
 		return []byte(v.(string)), nil
 	default:
