@@ -159,6 +159,7 @@ In that case, all data is stored in memory and will be stored on disk only on Cl
 
  - No transaction system. All operations are isolated, but you don't may batching them with automatic rollback.
  - [Keys](https://godoc.org/github.com/recoilme/pudge#Keys) function (select/query engine) may be slow. Speed of query may vary from 10ms to 1sec per million keys. Pudge don't use BTree/Skiplist or Adaptive radix tree for store keys in ordered way on every insert. Ordering operation is "lazy" and run only if needed.
+ - If you need storage or database for hundreds of millions keys - take a look at [Sniper](https://github.com/recoilme/sniper) or [b52](https://github.com/recoilme/b52). They are optimized for highload (pudge - not).
  - No fsync on every insert. Most of database fsync data by the timer too
  - Deleted data don't remove from physically (but upsert will try to reuse space). You may shrink database only with backup right now
 ```golang
