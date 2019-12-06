@@ -279,7 +279,7 @@ func (db *Db) KeysByPrefix(prefix []byte, limit, offset int, asc bool) ([][]byte
 	// resulting array
 	arr := make([][]byte, 0, 0)
 	found := db.foundPref(prefix, asc)
-	if found >= len(db.keys) || !startFrom(db.keys[found], prefix) {
+	if found < 0 || found >= len(db.keys) || !startFrom(db.keys[found], prefix) {
 		//not found
 		return arr, ErrKeyNotFound
 	}

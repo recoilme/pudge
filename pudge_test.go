@@ -641,3 +641,109 @@ func TestSetsGets(t *testing.T) {
 	}
 	DeleteFile(f)
 }
+
+func TestEmptyKeysByPrefix(t *testing.T) {
+	// first pass with asc = false
+	db, err := Open(f, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	prefix, err := KeyToBinary("non-existant-prefix")
+	if err != nil {
+		t.Error(err)
+	}
+
+	keys, err := db.KeysByPrefix(prefix, 0, 0, false)
+	if err != ErrKeyNotFound {
+		t.Errorf("Error must be ErrKeyNotFound got: %s", err)
+	}
+
+	if len(keys) != 0 {
+		t.Errorf("Wrong amount of keys for empty database: %d", len(keys))
+	}
+
+	db.Set("some-key", "some-value")
+
+	keys, err = db.KeysByPrefix(prefix, 0, 0, false)
+	if err != ErrKeyNotFound {
+		t.Errorf("Error must be ErrKeyNotFound got: %s", err)
+	}
+
+	if len(keys) != 0 {
+		t.Errorf("Wrong amount of keys: %d", len(keys))
+	}
+
+	err = db.DeleteFile()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// second pass with asc = true
+	db, err = Open(f, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	prefix, err = KeyToBinary("non-existant-prefix")
+	if err != nil {
+		t.Error(err)
+	}
+
+	keys, err = db.KeysByPrefix(prefix, 0, 0, true)
+	if err != ErrKeyNotFound {
+		t.Errorf("Error must be ErrKeyNotFound got: %s", err)
+	}
+
+	if len(keys) != 0 {
+		t.Errorf("Wrong amount of keys for empty database: %d", len(keys))
+	}
+
+	db.Set("some-key", "some-value")
+
+	keys, err = db.KeysByPrefix(prefix, 0, 0, true)
+	if err != ErrKeyNotFound {
+		t.Errorf("Error must be ErrKeyNotFound got: %s", err)
+	}
+
+	if len(keys) != 0 {
+		t.Errorf("Wrong amount of keys: %d", len(keys))
+	}
+
+	// third pass with non-zero offset
+	db, err = Open(f, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	prefix, err = KeyToBinary("non-existant-prefix")
+	if err != nil {
+		t.Error(err)
+	}
+
+	keys, err = db.KeysByPrefix(prefix, 0, 1, false)
+	if err != ErrKeyNotFound {
+		t.Errorf("Error must be ErrKeyNotFound got: %s", err)
+	}
+
+	if len(keys) != 0 {
+		t.Errorf("Wrong amount of keys for empty database: %d", len(keys))
+	}
+
+	db.Set("some-key", "some-value")
+
+	keys, err = db.KeysByPrefix(prefix, 0, 1, false)
+	if err != ErrKeyNotFound {
+		t.Errorf("Error must be ErrKeyNotFound got: %s", err)
+	}
+
+	if len(keys) != 0 {
+		t.Errorf("Wrong amount of keys: %d", len(keys))
+	}
+
+	err = db.DeleteFile()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+}
