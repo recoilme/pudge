@@ -45,13 +45,13 @@ type Cmd struct {
 }
 
 // Config fo db
-// Default FileMode = 0666
-// Default DirMode = 0777
+// Default FileMode = 0644
+// Default DirMode = 0755
 // Default SyncInterval = 0 sec, 0 - disable sync (os will sync, typically 30 sec or so)
 // If StroreMode==2 && file == "" - pure inmemory mode
 type Config struct {
-	FileMode     int // 0666
-	DirMode      int // 0777
+	FileMode     int // 0644
+	DirMode      int // 0755
 	SyncInterval int // in seconds
 	StoreMode    int // 0 - file first, 2 - memory first(with persist on close), 2 - with empty file - memory without persist
 }

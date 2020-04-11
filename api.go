@@ -8,8 +8,8 @@ import (
 
 // DefaultConfig is default config
 var DefaultConfig = &Config{
-	FileMode:     0666,
-	DirMode:      0777,
+	FileMode:     0644,
+	DirMode:      0755,
 	SyncInterval: 0,
 	StoreMode:    0}
 
@@ -17,7 +17,7 @@ var DefaultConfig = &Config{
 // Create new db if not exist.
 // Read db to obj if exist.
 // Or error if any.
-// Default Config (if nil): &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 0}
+// Default Config (if nil): &Config{FileMode: 0644, DirMode: 0755, SyncInterval: 0}
 func Open(f string, cfg *Config) (*Db, error) {
 	if cfg == nil {
 		cfg = DefaultConfig
