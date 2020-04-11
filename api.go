@@ -342,7 +342,10 @@ func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, err
 	}
 	db.RLock()
 	defer db.RUnlock()
-	find, _ := db.findKey(from, asc)
+	find, err := db.findKey(from, asc)
+	if from != nil && err != nil {
+		return nil, err
+	}
 	start, end := checkInterval(find, limit, offset, excludeFrom, len(db.keys), asc)
 	if start < 0 || start >= len(db.keys) {
 		return arr, nil
