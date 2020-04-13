@@ -8,8 +8,8 @@ import (
 
 // DefaultConfig is default config
 var DefaultConfig = &Config{
-	FileMode:     0666,
-	DirMode:      0777,
+	FileMode:     0644,
+	DirMode:      0755,
 	SyncInterval: 0,
 	StoreMode:    0}
 
@@ -17,7 +17,7 @@ var DefaultConfig = &Config{
 // Create new db if not exist.
 // Read db to obj if exist.
 // Or error if any.
-// Default Config (if nil): &Config{FileMode: 0666, DirMode: 0777, SyncInterval: 0}
+// Default Config (if nil): &Config{FileMode: 0644, DirMode: 0755, SyncInterval: 0}
 func Open(f string, cfg *Config) (*Db, error) {
 	if cfg == nil {
 		cfg = DefaultConfig
@@ -342,7 +342,10 @@ func (db *Db) Keys(from interface{}, limit, offset int, asc bool) ([][]byte, err
 	}
 	db.RLock()
 	defer db.RUnlock()
-	find, _ := db.findKey(from, asc)
+	find, err := db.findKey(from, asc)
+	if from != nil && err != nil {
+		return nil, err
+	}
 	start, end := checkInterval(find, limit, offset, excludeFrom, len(db.keys), asc)
 	if start < 0 || start >= len(db.keys) {
 		return arr, nil
