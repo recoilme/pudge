@@ -3,7 +3,11 @@ package pudge
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"sort"
 )
 
 // DefaultConfig is default config
@@ -118,6 +122,75 @@ func (db *Db) Get(key, value interface{}) error {
 	return ErrKeyNotFound
 }
 
+func (db *Db) valueBytes(fv *os.File, val *Cmd) ([]byte, error) {
+	if db.storemode == 2 {
+		return val.Val, nil
+	}
+	b := make([]byte, val.Size)
+	_, err := fv.ReadAt(b, int64(val.Seek))
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (db *Db) CompactAndClose() error {
+	if db.cancelSyncer != nil {
+		db.cancelSyncer()
+	}
+	db.Lock()
+	defer db.Unlock()
+	if err := db.closeLocked(); err != nil {
+		return err
+	}
+	fv, err := os.Open(db.name)
+	if err != nil {
+		return err
+	}
+	// Now it's safe to compact the key and value files.
+	tmpdir, err := ioutil.TempDir(filepath.Dir(db.name), filepath.Base(db.name))
+	dbname := filepath.Join(tmpdir, filepath.Base(db.name))
+	ndb, err := Open(dbname,
+		&Config{
+			FileMode:  db.cfg.FileMode,
+			StoreMode: 2,
+		})
+	if err != nil {
+		return fmt.Errorf("CompactAndClose: %v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+	for _, k := range db.keys {
+		strkey := string(k)
+		cmd, ok := db.vals[strkey]
+		if !ok {
+			if len(k) > 0 {
+				return fmt.Errorf("%v: failed to find key %q\n", db.name, strkey)
+			}
+			continue
+		}
+		v, err := db.valueBytes(fv, cmd)
+		if err != nil {
+			return err
+		}
+		if err := ndb.Set(k, v); err != nil {
+			return err
+		}
+	}
+	if err := ndb.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(dbname, db.name); err != nil {
+		return err
+	}
+	if err := os.Rename(dbname+".idx", db.name+".idx"); err != nil {
+		return err
+	}
+	dbs.Lock()
+	delete(dbs.dbs, db.name)
+	dbs.Unlock()
+	return nil
+}
+
 // Close - sync & close files.
 // Return error if any.
 func (db *Db) Close() error {
@@ -126,7 +199,16 @@ func (db *Db) Close() error {
 	}
 	db.Lock()
 	defer db.Unlock()
+	if err := db.closeLocked(); err != nil {
+		return err
+	}
+	dbs.Lock()
+	delete(dbs.dbs, db.name)
+	dbs.Unlock()
+	return nil
+}
 
+func (db *Db) closeLocked() error {
 	if db.storemode == 2 && db.name != "" {
 		db.sort()
 		keys := make([][]byte, len(db.keys))
@@ -161,10 +243,6 @@ func (db *Db) Close() error {
 			return err
 		}
 	}
-
-	dbs.Lock()
-	delete(dbs.dbs, db.name)
-	dbs.Unlock()
 	return nil
 }
 
@@ -179,7 +257,6 @@ func CloseAll() (err error) {
 			break
 		}
 	}
-
 	return err
 }
 
@@ -265,6 +342,41 @@ func (db *Db) Delete(key interface{}) error {
 		return nil
 	}
 	return ErrKeyNotFound
+}
+
+// DeleteKeys remove keys more efficiently than by doing so
+// a key at a time.
+// Returns error if any of the keys are not found
+func (db *Db) DeleteKeys(keys []interface{}) (int, error) {
+	sort.Slice(keys, db.lessBinary)
+	db.Lock()
+	defer db.Unlock()
+	db.sort()
+	idx := 0
+	deleted := 0
+	for _, key := range keys {
+		k, err := KeyToBinary(key)
+		if err != nil {
+			return deleted, err
+		}
+		if _, ok := db.vals[string(k)]; !ok {
+			return deleted, ErrKeyNotFound
+		}
+		delete(db.vals, string(k))
+		remaining := db.keys[idx:]
+		idx = sort.Search(len(remaining), func(i int) bool {
+			return bytes.Compare(db.keys[i], k) >= 0
+		})
+		if idx < len(remaining) {
+			db.keys = append(db.keys[:idx], db.keys[idx+1:]...)
+		}
+		_, err = writeKey(db.fk, 1, 0, 0, k, -1)
+		if err != nil {
+			return deleted, err
+		}
+		deleted += 1
+	}
+	return deleted, nil
 }
 
 // KeysByPrefix return keys with prefix
