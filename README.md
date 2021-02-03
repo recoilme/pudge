@@ -15,6 +15,13 @@ Table of Contents
 	* [Test 1](#test-1)
 	* [Test 4](#test-4)
 
+## Local Modifications
+
+This fork of pudge improves the efficiency of deletions for databases with
+large numbers of keys. It also provides a compaction API call to remove
+deleted keys and values, and also 'orphaned' entries in the value file that
+are no longer used.
+
 ## Description
 
 Package pudge is a fast and simple key/value store written using Go's standard library.

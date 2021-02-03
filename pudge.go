@@ -34,6 +34,7 @@ type Db struct {
 	vals         map[string]*Cmd
 	cancelSyncer context.CancelFunc
 	storemode    int
+	cfg          Config
 }
 
 // Cmd represent keys and vals addresses
@@ -72,6 +73,7 @@ func newDb(f string, cfg *Config) (*Db, error) {
 	db.keys = make([][]byte, 0)
 	db.vals = make(map[string]*Cmd)
 	db.storemode = cfg.StoreMode
+	db.cfg = *cfg
 
 	// Apply default values
 	if cfg.FileMode == 0 {
@@ -113,6 +115,7 @@ func newDb(f string, cfg *Config) (*Db, error) {
 	}
 	buf.Write(b)
 	var readSeek uint32
+	deletions := make(map[string]struct{}, 0)
 	for buf.Len() > 0 {
 		_ = uint8(buf.Next(1)[0]) //format version
 		t := uint8(buf.Next(1)[0])
@@ -139,10 +142,23 @@ func newDb(f string, cfg *Config) (*Db, error) {
 				db.appendKey(key)
 			}
 			db.vals[strkey] = cmd
+			// in case a deleted key was added back.
+			delete(deletions, strkey)
 		case 1:
 			delete(db.vals, strkey)
-			db.deleteFromKeys(key)
+			deletions[strkey] = struct{}{}
 		}
+	}
+
+	if len(deletions) > 0 {
+		nkeys := make([][]byte, len(db.keys)-len(deletions))
+		db.sort()
+		for _, key := range db.keys {
+			if _, ok := deletions[string(key)]; !ok {
+				nkeys = append(nkeys, key)
+			}
+		}
+		db.keys = nkeys
 	}
 
 	if cfg.SyncInterval > 0 {
@@ -216,7 +232,6 @@ func (db *Db) found(b []byte, asc bool) int {
 // KeyToBinary return key in bytes
 func KeyToBinary(v interface{}) ([]byte, error) {
 	var err error
-
 	switch v.(type) {
 	case []byte:
 		return v.([]byte), nil
