@@ -397,7 +397,6 @@ func (db *Db) KeysByPrefix(prefix []byte, limit, offset int, asc bool) ([][]byte
 	}
 
 	start, end := checkInterval(found, limit, offset, 0, len(db.keys), asc)
-
 	if start < 0 || start >= len(db.keys) {
 		return arr, nil
 	}

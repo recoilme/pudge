@@ -139,11 +139,18 @@ func newDb(f string, cfg *Config) (*Db, error) {
 		case 0:
 			if _, exists := db.vals[strkey]; !exists {
 				//write new key at keys store
-				db.appendKey(key)
+				// in case a deleted key was added back.
+				if _, deleted := deletions[strkey]; deleted {
+					delete(deletions, strkey)
+				} else {
+					// only add the key if it has not been deleted, this
+					// avoids appending the same key multiple times if it
+					// has been added, deleted and then added again.
+					db.appendKey(key)
+				}
 			}
 			db.vals[strkey] = cmd
-			// in case a deleted key was added back.
-			delete(deletions, strkey)
+
 		case 1:
 			delete(db.vals, strkey)
 			deletions[strkey] = struct{}{}
