@@ -150,15 +150,13 @@ func newDb(f string, cfg *Config) (*Db, error) {
 				}
 			}
 			db.vals[strkey] = cmd
-
 		case 1:
 			delete(db.vals, strkey)
 			deletions[strkey] = struct{}{}
 		}
 	}
-
 	if len(deletions) > 0 {
-		nkeys := make([][]byte, len(db.keys)-len(deletions))
+		nkeys := make([][]byte, 0, len(db.keys)-len(deletions))
 		db.sort()
 		for _, key := range db.keys {
 			if _, ok := deletions[string(key)]; !ok {
