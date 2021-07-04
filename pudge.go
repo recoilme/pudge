@@ -282,29 +282,32 @@ func ValToBinary(v interface{}) ([]byte, error) {
 }
 
 func writeKeyVal(fk, fv *os.File, readKey, writeVal []byte, exists bool, oldCmd *Cmd) (cmd *Cmd, err error) {
-
 	var seek, newSeek int64
-	cmd = &Cmd{Size: uint32(len(writeVal))}
+	//	cmd = &Cmd{Size: uint32(len(writeVal))}
 	if exists {
 		// key exists
-		cmd.Seek = oldCmd.Seek
-		cmd.KeySeek = oldCmd.KeySeek
+		cpy := Cmd{Size: uint32(len(writeVal))}
+		cpy.Seek = oldCmd.Seek
+		cpy.KeySeek = oldCmd.KeySeek
 		if oldCmd.Size >= uint32(len(writeVal)) {
 			//write at old seek new value
 			_, _, err = writeAtPos(fv, writeVal, int64(oldCmd.Seek))
 		} else {
 			//write at new seek (at the end of file)
 			seek, _, err = writeAtPos(fv, writeVal, int64(-1))
-			cmd.Seek = uint32(seek)
+			cpy.Seek = uint32(seek)
 		}
 		if err == nil {
 			// if no error - store key at KeySeek
-			newSeek, err = writeKey(fk, 0, cmd.Seek, cmd.Size, []byte(readKey), int64(cmd.KeySeek))
-			cmd.KeySeek = uint32(newSeek)
+			newSeek, err = writeKey(fk, 0, cpy.Seek, cpy.Size, []byte(readKey), int64(cpy.KeySeek))
+			cpy.KeySeek = uint32(newSeek)
 		}
+		*oldCmd = cpy
+		cmd = oldCmd
 	} else {
 		// new key
 		// write value at the end of file
+		cmd = &Cmd{Size: uint32(len(writeVal))}
 		seek, _, err = writeAtPos(fv, writeVal, int64(-1))
 		cmd.Seek = uint32(seek)
 		if err == nil {

@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
+	"unsafe"
 )
 
 // DefaultConfig is default config
@@ -43,38 +45,55 @@ func Open(f string, cfg *Config) (*Db, error) {
 	return db, err
 }
 
+func strToBytesNoCopy(s string) []byte {
+	const max = 0x7fff0000
+	if len(s) > max {
+		panic("string too long")
+	}
+	return (*[max]byte)(unsafe.Pointer((*reflect.StringHeader)(unsafe.Pointer(&s)).Data))[:len(s):len(s)]
+}
+
 // Set store any key value to db
 func (db *Db) Set(key, value interface{}) error {
 	db.Lock()
 	defer db.Unlock()
-	k, err := KeyToBinary(key)
-	if err != nil {
-		return err
+	strKey, isStrKey := key.(string)
+	var kReadOnly []byte
+	var err error
+	if isStrKey {
+		kReadOnly = strToBytesNoCopy(strKey)
+	} else {
+		kReadOnly, err = KeyToBinary(key)
+		strKey = string(kReadOnly)
+		if err != nil {
+			return err
+		}
 	}
 	v, err := ValToBinary(value)
 	if err != nil {
 		return err
 	}
 	//log.Println("Set:", k, v)
-	oldCmd, exists := db.vals[string(k)]
+	var oldCmd *Cmd
+	var exists bool
+	oldCmd, exists = db.vals[strKey]
 	//fmt.Println("StoreMode", db.config.StoreMode)
 	if db.storemode == 2 {
 		cmd := &Cmd{}
 		cmd.Size = uint32(len(v))
 		cmd.Val = make([]byte, len(v))
 		copy(cmd.Val, v)
-		db.vals[string(k)] = cmd
+		db.vals[strKey] = cmd
 	} else {
-		cmd, err := writeKeyVal(db.fk, db.fv, k, v, exists, oldCmd)
+		cmd, err := writeKeyVal(db.fk, db.fv, kReadOnly, v, exists, oldCmd)
 		if err != nil {
 			return err
 		}
-		db.vals[string(k)] = cmd
+		db.vals[strKey] = cmd
 	}
 	if !exists {
-		db.appendKey(k)
+		db.appendKey(kReadOnly)
 	}
-
 	return err
 }
 
